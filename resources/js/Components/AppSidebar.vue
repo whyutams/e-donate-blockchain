@@ -4,6 +4,19 @@ import { computed, watch } from 'vue';
 import UserProfileMenu from './UserProfileMenu.vue';
 import { adminNavigation } from '@/navigation/admin';
 import { userNavigation } from '@/navigation/user';
+import {
+    IconLayoutDashboard,
+    IconHeartHandshake,
+    IconActivity,
+    IconAdjustments,
+    IconUsers,
+    IconChevronLeft,
+    IconX,
+    IconShieldCheck,
+    IconWallet,
+    IconReceipt,
+} from '@tabler/icons-vue';
+import type { Component } from 'vue';
 
 const props = defineProps<{ open: boolean; collapsed: boolean }>();
 const emit = defineEmits<{ close: []; toggle: [] }>();
@@ -18,47 +31,91 @@ const navigation = computed(() => {
     return userNavigation;
 });
 
+const getIcon = (iconName: string): Component => {
+    switch (iconName) {
+        case 'grid':
+        case 'dashboard':
+            return IconLayoutDashboard;
+        case 'heart':
+        case 'donation':
+            return IconHeartHandshake;
+        case 'activity':
+            return IconActivity;
+        case 'manage':
+        case 'settings':
+            return IconAdjustments;
+        case 'users':
+            return IconUsers;
+        case 'wallet':
+            return IconWallet;
+        case 'receipt':
+        case 'ledger':
+            return IconReceipt;
+        default:
+            return IconLayoutDashboard;
+    }
+};
+
 const isActive = (href: string) => computed(() => page.url.startsWith(href)).value;
 
 watch(() => page.url, () => emit('close'));
 </script>
 
 <template>
-    <div v-if="open" class="fixed inset-0 z-30 bg-slate-900/10 backdrop-blur-sm lg:hidden" @click="emit('close')"></div>
+    <div v-if="open" class="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-sm lg:hidden" @click="emit('close')"></div>
 
     <aside
-        class="fixed inset-y-0 left-0 z-40 flex h-screen w-[min(82vw,248px)] -translate-x-full flex-col overflow-visible border-r border-[#dce6d8] bg-white px-4 py-5 shadow-xl transition-[width,transform] duration-200 lg:z-40 lg:w-60 lg:translate-x-0 lg:shadow-none"
-        :class="[{ 'translate-x-0': open }, { 'lg:w-[72px]': props.collapsed }]"
+        class="fixed inset-y-0 left-0 z-40 flex h-screen w-[min(82vw,256px)] -translate-x-full flex-col overflow-visible border-r border-[#dce6d8] bg-white px-4 py-5 shadow-xl transition-[width,transform] duration-200 lg:z-40 lg:w-64 lg:translate-x-0 lg:shadow-none"
+        :class="[{ 'translate-x-0': open }, { 'lg:w-[76px]': props.collapsed }]"
     >
         <div class="relative flex shrink-0 items-center justify-between px-2">
             <Link href="/dashboard" class="flex min-w-0 items-center gap-3" :class="props.collapsed ? 'lg:mx-auto' : ''" @click="emit('close')">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-lg font-black text-emerald-700">S</span>
-                <span class="text-lg font-bold tracking-tight text-slate-900" :class="props.collapsed ? 'lg:hidden' : ''">Safe<span class="text-emerald-700">Give</span></span>
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
+                    <IconShieldCheck class="h-5 w-5" stroke-width="2.2" />
+                </div>
+                <div :class="props.collapsed ? 'lg:hidden' : ''" class="flex flex-col">
+                    <span class="text-base font-bold tracking-tight text-slate-900">Safe<span class="text-emerald-700">Give</span></span>
+                    <span class="text-[10px] font-medium tracking-wide text-slate-400 uppercase">Blockchain Donate</span>
+                </div>
             </Link>
-            <button v-if="!props.collapsed" type="button" aria-label="Tutup menu" class="rounded-lg p-2 text-slate-400 hover:bg-[#f3f6ef] lg:hidden" @click="emit('close')">×</button>
-            <button type="button" :aria-label="props.collapsed ? 'Buka sidebar' : 'Kecilkan sidebar'" :title="props.collapsed ? 'Buka sidebar' : 'Kecilkan sidebar'" class="hidden rounded-lg p-2 text-slate-400 transition hover:bg-[#f3f6ef] hover:text-emerald-700 lg:block" :class="props.collapsed ? 'absolute -right-3 top-0 bg-white shadow-sm' : ''" @click="emit('toggle')">
-                <svg class="h-4 w-4 transition-transform" :class="props.collapsed ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6" /></svg>
+            <button v-if="!props.collapsed" type="button" aria-label="Tutup menu" class="rounded-lg p-2 text-slate-400 transition hover:bg-[#f3f6ef] hover:text-slate-700 lg:hidden" @click="emit('close')">
+                <IconX class="h-4 w-4" stroke-width="2" />
+            </button>
+            <button
+                type="button"
+                :aria-label="props.collapsed ? 'Buka sidebar' : 'Kecilkan sidebar'"
+                :title="props.collapsed ? 'Buka sidebar' : 'Kecilkan sidebar'"
+                class="hidden rounded-lg p-2 text-slate-400 transition hover:bg-[#f3f6ef] hover:text-emerald-700 lg:block"
+                :class="props.collapsed ? 'absolute -right-3 top-1 bg-white shadow-md border border-[#dce6d8]' : ''"
+                @click="emit('toggle')"
+            >
+                <IconChevronLeft class="h-4 w-4 transition-transform duration-200" :class="props.collapsed ? 'rotate-180' : ''" stroke-width="2" />
             </button>
         </div>
 
         <div class="mt-8 min-h-0 flex-1 overflow-y-auto px-1 [scrollbar-width:thin] [scrollbar-color:#dce6d8_transparent]">
-            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400" :class="props.collapsed ? 'lg:hidden' : ''">Menu utama</p>
-            <nav class="mt-3 space-y-1 pb-4">
+            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400" :class="props.collapsed ? 'lg:hidden' : ''">Menu Utama</p>
+            <nav class="mt-3 space-y-1.5 pb-4">
                 <template v-for="item in navigation" :key="item.label">
                     <Link
                         :href="item.href"
                         class="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition"
                         :class="[
                             isActive(item.href)
-                                ? 'bg-[#edf4e9] text-emerald-800'
-                                : 'text-slate-500 hover:bg-[#f8faf6] hover:text-emerald-700',
+                                ? 'bg-[#edf4e9] text-emerald-800 shadow-sm'
+                                : 'text-slate-600 hover:bg-[#f8faf6] hover:text-emerald-700',
                             props.collapsed
                                 ? 'lg:justify-center lg:px-0'
                                 : ''
                         ]"
                         @click="emit('close')"
                     >
-                        <!-- icon -->
+                        <component
+                            :is="getIcon(item.icon)"
+                            class="h-5 w-5 shrink-0 transition-transform duration-150 group-hover:scale-105"
+                            :class="isActive(item.href) ? 'text-emerald-700' : 'text-slate-400 group-hover:text-emerald-700'"
+                            stroke-width="1.9"
+                        />
 
                         <span :class="props.collapsed ? 'lg:hidden' : ''">
                             {{ item.label }}

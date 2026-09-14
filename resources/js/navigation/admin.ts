@@ -5,15 +5,13 @@ export const adminNavigation = [
         icon: 'grid',
     },
     {
-        label: 'Manajemen (menu admin)',
+        label: 'Manajemen Donasi',
         href: '/management',
         icon: 'manage',
     },
-  
     {
-        label: 'Pengguna (menu admin)',
+        label: 'Pengguna & Hak Akses',
         href: '/management/users',
         icon: 'users',
     },
-    
 ];
