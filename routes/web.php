@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+Route::middleware(['throttle:global'])->group(function () {
+    Route::get('/', function () {
+        return Inertia::render('Welcome', [
+            'laravelVersion' => Application::VERSION,
+            'phpVersion' => PHP_VERSION,
+            'dbName' => config('database.connections.mysql.database'),
+            'extensions' => [
+                'bcmath' => extension_loaded('bcmath'),
+                'gmp' => extension_loaded('gmp'),
+            ],
+        ]);
+    });
+});
+
+Route::middleware(['throttle:donations'])->prefix('api')->group(function () {
+    Route::get('/donations/health', function () {
+        return response()->json([
+            'status' => 'active',
+            'limiter' => 'donations (10 requests / min)',
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    });
+});
