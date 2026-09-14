@@ -5,13 +5,18 @@ export const userNavigation = [
         icon: 'grid',
     },
     {
-        label: 'Donasi saya (menu User)',
+        label: 'Donasi Saya',
         href: '/dashboard#donations',
         icon: 'heart',
     },
     {
-        label: 'Aktivitas (menu User)',
+        label: 'Aktivitas Ledger',
         href: '/dashboard#activity',
         icon: 'activity',
+    },
+    {
+        label: 'Kampanye Aktif',
+        href: '/dashboard#campaigns',
+        icon: 'receipt',
     },
 ];
