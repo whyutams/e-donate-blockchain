@@ -18,6 +18,14 @@ import {
     IconX,
     IconAlertCircle,
     IconCash,
+    IconVideo,
+    IconBrandInstagram,
+    IconBrandFacebook,
+    IconBrandTiktok,
+    IconExternalLink,
+    IconTrash,
+    IconLink,
+    IconPencil,
 } from '@tabler/icons-vue';
 
 interface Donation {
@@ -50,6 +58,7 @@ interface Campaign {
     payout_bank_name: string | null;
     payout_account_number: string | null;
     payout_account_name: string | null;
+    video_url: string | null;
     withdrawal_status: 'not_ready' | 'pending' | 'confirmed' | 'failed';
     withdrawal_transaction_hash: string | null;
     can_withdraw: boolean;
@@ -255,8 +264,108 @@ const submitWithdrawal = () => {
     });
 };
 
+// Social Media Video URL Modal & Helpers
+const copiedVideoUrl = ref(false);
+const copyVideoUrl = () => {
+    if (props.campaign.video_url) {
+        navigator.clipboard.writeText(props.campaign.video_url);
+        copiedVideoUrl.value = true;
+        setTimeout(() => {
+            copiedVideoUrl.value = false;
+        }, 2000);
+    }
+};
+
+const getPlatformInfo = (url: string | null | undefined) => {
+    if (!url) return null;
+    const u = url.toLowerCase().trim();
+    if (u.includes('instagram.com') || u.includes('instagr.am')) {
+        return {
+            name: 'Instagram',
+            type: 'instagram',
+            badgeClass: 'bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-amber-500/10 text-pink-700 border-pink-200',
+            badgeIconClass: 'text-pink-600',
+            buttonClass: 'bg-gradient-to-r from-pink-600 via-purple-600 to-amber-600 hover:opacity-90 text-white shadow-pink-600/20',
+            label: 'Instagram Video / Reel',
+        };
+    }
+    if (u.includes('tiktok.com')) {
+        return {
+            name: 'TikTok',
+            type: 'tiktok',
+            badgeClass: 'bg-slate-900/10 text-slate-900 border-slate-300',
+            badgeIconClass: 'text-slate-900',
+            buttonClass: 'bg-slate-900 hover:bg-black text-white shadow-slate-900/20',
+            label: 'TikTok Video',
+        };
+    }
+    if (u.includes('facebook.com') || u.includes('fb.watch') || u.includes('fb.com')) {
+        return {
+            name: 'Facebook',
+            type: 'facebook',
+            badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+            badgeIconClass: 'text-blue-600',
+            buttonClass: 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20',
+            label: 'Facebook Video / Reel',
+        };
+    }
+    return null;
+};
+
+const isSocialUrlValid = (url: string) => {
+    if (!url || !url.trim()) return false;
+    const pattern = /^https?:\/\/(www\.)?(instagram\.com|instagr\.am|facebook\.com|fb\.watch|fb\.com|tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\/.+$/i;
+    return pattern.test(url.trim());
+};
+
+const isVideoModalOpen = ref(false);
+const videoForm = useForm({
+    video_url: props.campaign.video_url || '',
+});
+
+const openVideoModal = () => {
+    videoForm.video_url = props.campaign.video_url || '';
+    videoForm.clearErrors();
+    isVideoModalOpen.value = true;
+};
+
+const closeVideoModal = () => {
+    isVideoModalOpen.value = false;
+    videoForm.clearErrors();
+};
+
+const submitVideoUrl = () => {
+    videoForm.patch(`/campaigns/${props.campaign.id}/video-url`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            closeVideoModal();
+        },
+    });
+};
+
+const removeVideoUrl = () => {
+    videoForm.video_url = '';
+    videoForm.patch(`/campaigns/${props.campaign.id}/video-url`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            closeVideoModal();
+        },
+    });
+};
+
+const modalDetectedPlatform = computed(() => getPlatformInfo(videoForm.video_url));
+const isModalUrlValid = computed(() => isSocialUrlValid(videoForm.video_url));
+
 const isOrganizer = computed(() => {
-    return page.props.auth.user?.name === props.campaign.organizer.name;
+    if (!page.props.auth.user) return false;
+    if (props.campaign.organizer.id && (page.props.auth.user as any).id) {
+        return (page.props.auth.user as any).id === props.campaign.organizer.id;
+    }
+    return page.props.auth.user.name === props.campaign.organizer.name;
+});
+
+const isWithdrawn = computed(() => {
+    return props.campaign.status === 'withdrawn' || props.campaign.withdrawal_status === 'confirmed';
 });
 </script>
 
@@ -345,94 +454,266 @@ const isOrganizer = computed(() => {
                 </div>
             </section>
 
-            <!-- Organizer Withdrawal Section (Visible to Organizer or Admin) -->
-            <section
-                v-if="isOrganizer || page.props.auth.is_admin"
-                class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-[#f4f9f2] p-6 shadow-sm sm:p-8"
+            <!-- Action Panels: Withdrawal Panel (Left) & Social Media Video Panel (Right) -->
+            <div
+                class="grid grid-cols-1 gap-6"
+                :class="(isOrganizer || page.props.auth.is_admin) ? 'lg:grid-cols-2' : ''"
             >
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-emerald-100 pb-5">
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-600/20">
-                            <IconCash class="h-6 w-6" stroke-width="2" />
-                        </div>
-                        <div>
-                            <h2 class="text-lg font-black text-slate-900 tracking-tight">
-                                Panel Pencairan Dana (Penyelenggara)
-                            </h2>
-                            <p class="text-xs text-slate-600">
-                                Penyelenggara dapat mencairkan dana saat target telah terpenuhi (100%) atau masa kampanye telah melewati jatuh tempo.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Status Badge -->
+                <!-- Organizer Withdrawal Section (Visible to Organizer or Admin) -->
+                <section
+                    v-if="isOrganizer || page.props.auth.is_admin"
+                    class="flex flex-col justify-between rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-[#f4f9f2] p-6 shadow-sm sm:p-7"
+                >
                     <div>
-                        <span
-                            v-if="campaign.withdrawal_status === 'confirmed'"
-                            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1.5 text-xs font-bold text-emerald-900 border border-emerald-300"
-                        >
-                            <IconShieldCheck class="h-4 w-4 text-emerald-700" />
-                            Dana Telah Dicairkan
-                        </span>
-                        <span
-                            v-else-if="campaign.withdrawal_status === 'pending'"
-                            class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3.5 py-1.5 text-xs font-bold text-amber-900 border border-amber-300"
-                        >
-                            <IconClock class="h-4 w-4 text-amber-700" />
-                            Pencairan Sedang Diproses Admin
-                        </span>
-                        <span
-                            v-else-if="campaign.can_withdraw"
-                            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1.5 text-xs font-bold text-emerald-900 border border-emerald-300"
-                        >
-                            <IconCheck class="h-4 w-4 text-emerald-700" />
-                            Memenuhi Syarat Pencairan
-                        </span>
-                        <span
-                            v-else
-                            class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-bold text-slate-700 border border-slate-200"
-                        >
-                            Belum Memenuhi Syarat
-                        </span>
-                    </div>
-                </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-emerald-100 pb-4">
+                            <div class="flex items-center gap-3">
+                                <div>
+                                    <h2 class="text-base font-black text-slate-900 tracking-tight">
+                                        Panel Pencairan Dana
+                                    </h2>
+                                    <p class="text-[11px] text-slate-500">
+                                        Pencairan saat target 100% atau masa telah lewat jatuh tempo.
+                                    </p>
+                                </div>
+                            </div>
 
-                <div class="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 items-center">
-                    <div class="space-y-1">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Rekening Tujuan Payout</span>
-                        <p class="font-bold text-slate-900">{{ campaign.payout_bank_name || 'Bank Penyelenggara' }}</p>
-                        <p class="font-mono text-sm font-semibold text-slate-700">{{ campaign.payout_account_number || '-' }}</p>
-                        <p class="text-xs text-slate-500">a.n. {{ campaign.payout_account_name || '-' }}</p>
+                            <!-- Status Badge -->
+                            <div>
+                                <span
+                                    v-if="campaign.withdrawal_status === 'confirmed'"
+                                    class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900 border border-emerald-300"
+                                >
+                                    <IconShieldCheck class="h-3.5 w-3.5 text-emerald-700" />
+                                    Dana Telah Dicairkan
+                                </span>
+                                <span
+                                    v-else-if="campaign.withdrawal_status === 'pending'"
+                                    class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 border border-amber-300"
+                                >
+                                    <IconClock class="h-3.5 w-3.5 text-amber-700" />
+                                    Diproses Admin
+                                </span>
+                                <span
+                                    v-else-if="campaign.can_withdraw"
+                                    class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900 border border-emerald-300"
+                                >
+                                    <IconCheck class="h-3.5 w-3.5 text-emerald-700" />
+                                    Memenuhi Syarat
+                                </span>
+                                <span
+                                    v-else
+                                    class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 border border-slate-200"
+                                >
+                                    Belum Memenuhi Syarat
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div class="space-y-0.5">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rekening Tujuan Payout</span>
+                                <p class="text-xs font-bold text-slate-900">{{ campaign.payout_bank_name || 'Bank Penyelenggara' }}</p>
+                                <p class="font-mono text-xs font-semibold text-slate-700">{{ campaign.payout_account_number || '-' }}</p>
+                                <p class="text-[11px] text-slate-500">a.n. {{ campaign.payout_account_name || '-' }}</p>
+                            </div>
+
+                            <div class="space-y-0.5">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Syarat Pencairan</span>
+                                <p class="text-xs leading-relaxed text-slate-600">
+                                    {{ campaign.withdrawal_message }}
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="space-y-1">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Status Syarat Pencairan</span>
-                        <p class="text-xs leading-relaxed text-slate-700">
-                            {{ campaign.withdrawal_message }}
-                        </p>
-                    </div>
-
-                    <div class="flex sm:justify-end">
+                    <div class="mt-5 pt-4 border-t border-emerald-100/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400 font-medium">Khusus Penyelenggara & Admin</span>
                         <button
                             v-if="campaign.withdrawal_status === 'not_ready' || !campaign.withdrawal_status"
                             type="button"
                             :disabled="!campaign.can_withdraw"
-                            class="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs font-bold shadow-md transition"
-                            :class="campaign.can_withdraw ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-slate-200 text-slate-400 cursor-not-allowed'"
+                            class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm transition"
+                            :class="campaign.can_withdraw ? 'bg-emerald-700 text-white hover:bg-emerald-800 shadow-emerald-700/20' : 'bg-slate-200 text-slate-400 cursor-not-allowed'"
                             @click="isWithdrawModalOpen = true"
                         >
                             <IconReceipt class="h-4 w-4" />
                             <span>Ajukan Pencairan Dana</span>
                         </button>
-                        <div v-else-if="campaign.withdrawal_status === 'pending'" class="text-xs text-amber-800 font-semibold">
-                            Menunggu verifikasi transfer dari Admin SafeGive.
+                        <span v-else-if="campaign.withdrawal_status === 'pending'" class="text-xs text-amber-800 font-bold">
+                            Menunggu verifikasi transfer Admin
+                        </span>
+                        <span v-else class="text-xs text-emerald-800 font-bold">
+                            Pencairan dana selesai
+                        </span>
+                    </div>
+                </section>
+
+                <!-- Social Media Video Panel (Right side or Full width) -->
+                <section
+                    class="flex flex-col justify-between rounded-3xl border border-[#dce6d8] bg-white p-6 shadow-sm sm:p-7 transition"
+                >
+                    <div>
+                        <!-- Header -->
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
+                            <div class="flex items-center gap-3">
+                                <div>
+                                    <h2 class="text-base font-black text-slate-900 tracking-tight">
+                                        Informasi Video Media Sosial
+                                    </h2>
+                                    <p class="text-[11px] text-slate-500">
+                                        Video dokumentasi kampanye di Instagram, Facebook, atau TikTok.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Platform Badge -->
+                            <div v-if="campaign.video_url && getPlatformInfo(campaign.video_url)">
+                                <span
+                                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border"
+                                    :class="getPlatformInfo(campaign.video_url)?.badgeClass"
+                                >
+                                    <IconBrandInstagram v-if="getPlatformInfo(campaign.video_url)?.type === 'instagram'" class="h-3.5 w-3.5" />
+                                    <IconBrandTiktok v-else-if="getPlatformInfo(campaign.video_url)?.type === 'tiktok'" class="h-3.5 w-3.5" />
+                                    <IconBrandFacebook v-else-if="getPlatformInfo(campaign.video_url)?.type === 'facebook'" class="h-3.5 w-3.5" />
+                                    <span>{{ getPlatformInfo(campaign.video_url)?.label }}</span>
+                                </span>
+                            </div>
                         </div>
-                        <div v-else class="text-xs text-emerald-800 font-bold">
-                            Pencairan dana selesai.
+
+                        <!-- Content Body -->
+                        <div class="mt-4">
+                            <!-- When video URL exists -->
+                            <div v-if="campaign.video_url" class="space-y-3">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tautan Video Kampanye</span>
+                                
+                                <!-- URL Box & Action Buttons -->
+                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 rounded-2xl bg-slate-50 border border-slate-200">
+                                    <div class="flex items-center gap-2 px-2.5 py-1.5 min-w-0 flex-1">
+                                        <IconLink class="h-4 w-4 text-slate-400 shrink-0" />
+                                        <a
+                                            :href="campaign.video_url"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="font-mono text-xs text-slate-700 hover:text-emerald-700 truncate font-semibold underline decoration-slate-300 underline-offset-2"
+                                            :title="campaign.video_url"
+                                        >
+                                            {{ campaign.video_url }}
+                                        </a>
+                                    </div>
+
+                                    <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                        <!-- Open external link button -->
+                                        <a
+                                            :href="campaign.video_url"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-xs"
+                                            :class="getPlatformInfo(campaign.video_url)?.buttonClass || 'bg-emerald-700 text-white hover:bg-emerald-800'"
+                                        >
+                                            <IconExternalLink class="h-3.5 w-3.5" />
+                                            <span>Buka Video</span>
+                                        </a>
+
+                                        <!-- Copy Link Button -->
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                                            @click="copyVideoUrl"
+                                            :title="copiedVideoUrl ? 'Tersalin' : 'Salin Tautan'"
+                                        >
+                                            <IconCheck v-if="copiedVideoUrl" class="h-3.5 w-3.5 text-emerald-600" />
+                                            <IconCopy v-else class="h-3.5 w-3.5 text-slate-500" />
+                                        </button>
+
+                                        <!-- Edit Link Button (Organizers only if withdrawn) -->
+                                        <button
+                                            v-if="isOrganizer && isWithdrawn"
+                                            type="button"
+                                            class="inline-flex items-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition"
+                                            @click="openVideoModal"
+                                            title="Edit Tautan Video"
+                                        >
+                                            <IconPencil class="h-3.5 w-3.5" />
+                                            <span>Edit Link</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                    Video dokumentasi kampanye ini dapat ditonton langsung di aplikasi/web <strong>{{ getPlatformInfo(campaign.video_url)?.name || 'media sosial' }}</strong> untuk transparansi dan verifikasi publik.
+                                </p>
+                            </div>
+
+                            <!-- When no video URL exists -->
+                            <div v-else class="flex flex-col items-center justify-center py-5 text-center space-y-3 rounded-2xl bg-slate-50/70 border border-dashed border-slate-200 p-4">
+                                <div class="flex items-center gap-2 text-slate-400">
+                                    <IconBrandInstagram class="h-5 w-5" />
+                                    <IconBrandFacebook class="h-5 w-5" />
+                                    <IconBrandTiktok class="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-slate-700">
+                                        {{ isOrganizer ? (isWithdrawn ? 'Belum Ada Link Video Media Sosial' : 'Link Video Belum Dapat Disematkan') : 'Video Belum Disematkan' }}
+                                    </p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5 max-w-sm">
+                                        <template v-if="isOrganizer">
+                                            <span v-if="isWithdrawn">
+                                                Sematkan tautan video dari Instagram, Facebook, atau TikTok untuk memberikan bukti penyaluran donasi kepada donatur.
+                                            </span>
+                                            <span v-else class="text-amber-700 font-medium">
+                                                Tautan video dokumentasi hanya dapat disematkan setelah dana kampanye berhasil dicairkan (status: Withdrawn).
+                                            </span>
+                                        </template>
+                                        <template v-else>
+                                            Penyelenggara belum menyematkan link video media sosial untuk kampanye ini.
+                                        </template>
+                                    </p>
+                                </div>
+
+                                <!-- Add Link Button (Organizers only if withdrawn) -->
+                                <button
+                                    v-if="isOrganizer && isWithdrawn"
+                                    type="button"
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-700/20 hover:bg-emerald-800 transition"
+                                    @click="openVideoModal"
+                                >
+                                    <IconPencil class="h-3.5 w-3.5" />
+                                    <span>Tambah Link Video</span>
+                                </button>
+                                <span
+                                    v-else-if="isOrganizer && !isWithdrawn"
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-[11px] font-bold text-amber-800"
+                                >
+                                    <IconClock class="h-3.5 w-3.5 text-amber-600" />
+                                    <span>Menunggu Status Withdrawn</span>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </section>
+
+                    <!-- Footer info -->
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                        <span class="flex items-center gap-1">
+                            <IconShieldCheck class="h-3.5 w-3.5 text-emerald-600" />
+                            Hanya link Instagram, Facebook & TikTok
+                        </span>
+                        <button
+                            v-if="isOrganizer && isWithdrawn && campaign.video_url"
+                            type="button"
+                            class="text-emerald-700 font-bold hover:underline"
+                            @click="openVideoModal"
+                        >
+                            Ubah Link
+                        </button>
+                        <span
+                            v-else-if="isOrganizer && !isWithdrawn"
+                            class="text-amber-700 font-semibold"
+                        >
+                            Dapat diubah setelah status Withdrawn
+                        </span>
+                    </div>
+                </section>
+            </div>
 
             <!-- Main Split: Donation Form & Blockchain Ledger -->
             <div class="grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.85fr)]">
@@ -913,6 +1194,133 @@ const isOrganizer = computed(() => {
                         >
                             {{ withdrawForm.processing ? 'Mengajukan...' : 'Konfirmasi Pengajuan' }}
                         </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Video Link Edit Modal for Organizer -->
+        <div
+            v-if="isVideoModalOpen"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs"
+        >
+            <div class="w-full max-w-lg rounded-3xl bg-white p-6 sm:p-7 shadow-2xl space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800">
+                            <IconVideo class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Edit Link Video Media Sosial</h3>
+                            <p class="text-[11px] text-slate-500">Sematkan video dokumentasi resmi kampanye Anda</p>
+                        </div>
+                    </div>
+                    <button type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition" @click="closeVideoModal">
+                        <IconX class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <!-- Platform Support Notice -->
+                <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-slate-700 space-y-2">
+                    <p class="font-bold text-slate-800 text-[11px] uppercase tracking-wider">Platform Media Sosial yang Didukung:</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="flex items-center gap-1.5 rounded-xl bg-white border border-pink-200 p-2 text-pink-700">
+                            <IconBrandInstagram class="h-4 w-4 shrink-0 text-pink-600" />
+                            <span class="font-bold text-[11px]">Instagram</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 rounded-xl bg-white border border-blue-200 p-2 text-blue-700">
+                            <IconBrandFacebook class="h-4 w-4 shrink-0 text-blue-600" />
+                            <span class="font-bold text-[11px]">Facebook</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 rounded-xl bg-white border border-slate-300 p-2 text-slate-900">
+                            <IconBrandTiktok class="h-4 w-4 shrink-0 text-slate-900" />
+                            <span class="font-bold text-[11px]">TikTok</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="space-y-4" @submit.prevent="submitVideoUrl">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            URL Link Video
+                        </label>
+                        <div class="relative">
+                            <input
+                                v-model="videoForm.video_url"
+                                type="url"
+                                class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 pr-10"
+                                placeholder="https://www.instagram.com/reel/... atau https://vt.tiktok.com/..."
+                            />
+                            <button
+                                v-if="videoForm.video_url"
+                                type="button"
+                                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                                @click="videoForm.video_url = ''"
+                                title="Bersihkan input"
+                            >
+                                <IconX class="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        <!-- Live Feedback Indicator -->
+                        <div class="mt-2 flex items-center justify-between text-[11px]">
+                            <div v-if="videoForm.video_url">
+                                <span
+                                    v-if="modalDetectedPlatform"
+                                    class="inline-flex items-center gap-1 font-bold text-emerald-700"
+                                >
+                                    <IconCheck class="h-3.5 w-3.5" />
+                                    Terdeteksi: {{ modalDetectedPlatform.name }} Video
+                                </span>
+                                <span
+                                    v-else
+                                    class="inline-flex items-center gap-1 font-bold text-amber-700"
+                                >
+                                    <IconAlertCircle class="h-3.5 w-3.5" />
+                                    URL bukan dari Instagram, Facebook, atau TikTok
+                                </span>
+                            </div>
+                            <span v-else class="text-slate-400">
+                                Kosongkan jika ingin menghapus tautan video.
+                            </span>
+                        </div>
+
+                        <p v-if="videoForm.errors.video_url" class="mt-1.5 text-xs text-red-600 font-semibold flex items-center gap-1">
+                            <IconAlertCircle class="h-4 w-4 shrink-0" />
+                            <span>{{ videoForm.errors.video_url }}</span>
+                        </p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <div>
+                            <button
+                                v-if="campaign.video_url"
+                                type="button"
+                                :disabled="videoForm.processing"
+                                class="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition"
+                                @click="removeVideoUrl"
+                            >
+                                <IconTrash class="h-4 w-4" />
+                                <span>Hapus Link</span>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                class="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                                @click="closeVideoModal"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                :disabled="videoForm.processing || (videoForm.video_url.length > 0 && !isModalUrlValid)"
+                                class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 disabled:opacity-50 transition"
+                            >
+                                <IconCheck class="h-4 w-4" />
+                                <span>{{ videoForm.processing ? 'Menyimpan...' : 'Simpan Link' }}</span>
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

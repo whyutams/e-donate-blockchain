@@ -88,6 +88,9 @@ class CampaignController extends Controller
             'payout_account_name' => ['required', 'string', 'max:100'],
             'wallet_address' => ['nullable', 'string', 'max:255'],
             'blockchain_campaign_id' => ['nullable', 'integer', 'min:0'],
+            'video_url' => ['nullable', 'string', 'max:1000', 'regex:/^https?:\/\/(www\.)?(instagram\.com|instagr\.am|facebook\.com|fb\.watch|fb\.com|tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\/.+$/i'],
+        ], [
+            'video_url.regex' => 'Link video harus berupa URL valid dari Instagram, Facebook, atau TikTok.',
         ]);
 
         Campaign::create([
@@ -105,6 +108,7 @@ class CampaignController extends Controller
             'payout_account_name' => $validated['payout_account_name'],
             'wallet_address' => $validated['wallet_address'] ?? null,
             'blockchain_campaign_id' => $validated['blockchain_campaign_id'] ?? null,
+            'video_url' => $validated['video_url'] ?? null,
             'status' => 'active',
         ]);
 
@@ -127,6 +131,9 @@ class CampaignController extends Controller
             'payout_bank_name' => ['nullable', 'string', 'max:100'],
             'payout_account_number' => ['nullable', 'string', 'max:50'],
             'payout_account_name' => ['nullable', 'string', 'max:100'],
+            'video_url' => ['nullable', 'string', 'max:1000', 'regex:/^https?:\/\/(www\.)?(instagram\.com|instagr\.am|facebook\.com|fb\.watch|fb\.com|tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\/.+$/i'],
+        ], [
+            'video_url.regex' => 'Link video harus berupa URL valid dari Instagram, Facebook, atau TikTok.',
         ]);
 
         $campaign->update([
@@ -139,10 +146,34 @@ class CampaignController extends Controller
             'payout_bank_name' => $validated['payout_bank_name'] ?? $campaign->payout_bank_name,
             'payout_account_number' => $validated['payout_account_number'] ?? $campaign->payout_account_number,
             'payout_account_name' => $validated['payout_account_name'] ?? $campaign->payout_account_name,
+            'video_url' => array_key_exists('video_url', $validated) ? $validated['video_url'] : $campaign->video_url,
             'image_path' => $request->file('image')?->store('campaigns', 'public') ?? $campaign->image_path,
         ]);
 
         return back()->with('status', 'Kampanye berhasil diperbarui.');
+    }
+
+    public function updateVideoUrl(Request $request, Campaign $campaign): RedirectResponse
+    {
+        abort_unless($campaign->organizer_id === $request->user()->id, 403, 'Hanya penyelenggara yang dapat mengubah link video media sosial.');
+        abort_unless($campaign->status === 'withdrawn' || $campaign->withdrawal_status === 'confirmed', 422, 'Link video media sosial hanya dapat disematkan atau diubah setelah status kampanye telah dicairkan (withdrawn).');
+
+        $validated = $request->validate([
+            'video_url' => [
+                'nullable',
+                'string',
+                'max:1000',
+                'regex:/^https?:\/\/(www\.)?(instagram\.com|instagr\.am|facebook\.com|fb\.watch|fb\.com|tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\/.+$/i',
+            ],
+        ], [
+            'video_url.regex' => 'Link video harus berupa URL valid dari Instagram, Facebook, atau TikTok.',
+        ]);
+
+        $campaign->update([
+            'video_url' => $validated['video_url'] ? trim($validated['video_url']) : null,
+        ]);
+
+        return back()->with('status', 'Link video media sosial kampanye berhasil disimpan.');
     }
 
     public function destroy(Request $request, Campaign $campaign): RedirectResponse
@@ -175,6 +206,7 @@ class CampaignController extends Controller
             'payout_account_number' => $campaign->payout_account_number,
             'payout_account_name' => $campaign->payout_account_name,
             'blockchain_campaign_id' => $campaign->blockchain_campaign_id,
+            'video_url' => $campaign->video_url,
             'withdrawal_status' => $campaign->withdrawal_status ?? 'not_ready',
             'withdrawal_transaction_hash' => $campaign->withdrawal_transaction_hash,
             'can_withdraw' => $campaign->canWithdraw(),

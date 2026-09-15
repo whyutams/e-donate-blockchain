@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
 	})->name('profile');
 	Route::post('/verification-profile', [VerificationProfileController::class, 'store'])->name('verification-profile.store');
 	Route::resource('campaigns', CampaignController::class)->only(['index', 'show', 'create', 'store', 'update', 'destroy']);
+	Route::patch('/campaigns/{campaign}/video-url', [CampaignController::class, 'updateVideoUrl'])->name('campaigns.video-url.update');
 	Route::get('/my-campaigns', [CampaignController::class, 'mine'])->name('campaigns.mine');
 	Route::post('/campaigns/{campaign}/donations', [DonationController::class, 'store'])->name('campaigns.donations.store');
 	Route::post('/campaigns/{campaign}/donations/snap', [MidtransController::class, 'createSnap'])->name('campaigns.donations.snap');

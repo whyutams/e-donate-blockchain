@@ -28,6 +28,7 @@ class Campaign extends Model
         'payout_account_number',
         'payout_account_name',
         'blockchain_campaign_id',
+        'video_url',
         'withdrawal_transaction_hash',
         'withdrawal_amount',
         'withdrawal_status',
