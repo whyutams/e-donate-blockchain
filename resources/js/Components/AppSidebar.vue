@@ -15,6 +15,7 @@ import {
     IconShieldCheck,
     IconWallet,
     IconReceipt,
+    IconBook2,
 } from '@tabler/icons-vue';
 import type { Component } from 'vue';
 
@@ -48,6 +49,10 @@ const getIcon = (iconName: string): Component => {
             return IconUsers;
         case 'wallet':
             return IconWallet;
+        case 'verification':
+            return IconShieldCheck;
+        case 'guide':
+            return IconBook2;
         case 'receipt':
         case 'ledger':
             return IconReceipt;

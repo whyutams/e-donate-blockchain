@@ -5,13 +5,18 @@ export const adminNavigation = [
         icon: 'grid',
     },
     {
-        label: 'Manajemen Donasi',
-        href: '/management',
-        icon: 'manage',
+        label: 'Verifikasi Pengguna',
+        href: '/admin/verifications',
+        icon: 'verification',
     },
     {
         label: 'Pengguna & Hak Akses',
         href: '/management/users',
         icon: 'users',
+    },
+    {
+        label: 'Panduan',
+        href: '/panduan',
+        icon: 'guide',
     },
 ];
