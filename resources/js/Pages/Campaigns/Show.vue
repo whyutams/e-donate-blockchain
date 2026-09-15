@@ -48,6 +48,8 @@ interface Campaign {
     category: string;
     image_url: string | null;
     target_amount: number;
+    collected_amount: number;
+    remaining_amount: number;
     progress_percentage: number;
     donors_count: number;
     starts_at: string;
@@ -94,7 +96,7 @@ const adminBank = computed(() => page.props.admin_bank || {
 
 // Donation Form
 const form = useForm({
-    amount: '100000',
+    amount: String(Math.min(100000, props.campaign.remaining_amount)),
     payment_method: 'BCA',
     donor_name: page.props.auth.user?.name || '',
     is_anonymous: false,
@@ -106,7 +108,23 @@ const form = useForm({
 
 const presetAmounts = [25000, 50000, 100000, 250000, 500000, 1000000];
 const setAmount = (val: number) => {
-    form.amount = val.toString();
+    if (val <= props.campaign.remaining_amount) {
+        form.amount = val.toString();
+    }
+};
+
+const remainingAmount = computed(() => Math.max(0, props.campaign.remaining_amount));
+const isTargetReached = computed(() => remainingAmount.value === 0);
+const normalizeAmount = () => {
+    const amount = Number.parseInt(form.amount || '0', 10);
+    if (!Number.isFinite(amount) || amount < 1) {
+        form.amount = remainingAmount.value > 0 ? '1' : '0';
+        return;
+    }
+
+    if (amount > remainingAmount.value) {
+        form.amount = remainingAmount.value.toString();
+    }
 };
 
 const paymentMethods = [
@@ -151,6 +169,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('id-ID', {
 const shortHash = (hash: string) => `${hash.slice(0, 8)}...${hash.slice(-6)}`;
 
 const submitDonation = () => {
+    normalizeAmount();
+    if (isTargetReached.value || Number(form.amount) > remainingAmount.value) return;
+
     form.post(`/campaigns/${props.campaign.id}/donations`, {
         preserveScroll: true,
         forceFormData: true,
@@ -175,6 +196,9 @@ const midtransError = ref<string | null>(null);
 const midtransSuccess = ref<string | null>(null);
 
 const payWithMidtrans = async () => {
+    normalizeAmount();
+    if (isTargetReached.value || Number(form.amount) > remainingAmount.value) return;
+
     midtransError.value = null;
     midtransSuccess.value = null;
     isMidtransProcessing.value = true;
@@ -439,7 +463,7 @@ const isWithdrawn = computed(() => {
                                     {{ campaign.progress_percentage.toFixed(2) }}% Tercapai
                                 </span>
                                 <span class="font-bold text-slate-700">
-                                    Target {{ formatRupiah(campaign.target_amount) }}
+                                    Sisa {{ formatRupiah(campaign.remaining_amount) }}
                                 </span>
                             </div>
                             <div class="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
@@ -728,7 +752,7 @@ const isWithdrawn = computed(() => {
                                 </h2>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">
-                                Setiap transaksi dienkripsi dengan Paillier cryptosystem dan menghasilkan hash blockchain unik.
+                                Nominal donasi dilindungi enkripsi dan setiap catatan memiliki bukti hash.
                             </p>
                         </div>
                         <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 border border-emerald-200">
@@ -764,7 +788,7 @@ const isWithdrawn = computed(() => {
                                     </button>
                                 </div>
                                 <p class="mt-1 text-[10px] text-slate-400">
-                                    Block #{{ donation.block_number || 'Pending' }} • {{ formatDate(donation.created_at) }}
+                                    No. catatan #{{ donation.block_number || 'Pending' }} • {{ formatDate(donation.created_at) }}
                                 </p>
                             </div>
 
@@ -797,6 +821,9 @@ const isWithdrawn = computed(() => {
                     </div>
 
                     <div v-else class="mt-5 space-y-5">
+                                <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                                    Sisa target donasi: <strong>{{ formatRupiah(remainingAmount) }}</strong>. Nominal di atas sisa target tidak dapat dipilih.
+                                </div>
                         <!-- Payment Type Tabs -->
                         <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl">
                             <button
@@ -851,7 +878,8 @@ const isWithdrawn = computed(() => {
                                         v-for="amt in presetAmounts"
                                         :key="amt"
                                         type="button"
-                                        class="rounded-xl border py-2 text-xs font-bold transition text-center"
+                                        :disabled="amt > remainingAmount"
+                                        class="rounded-xl border py-2 text-xs font-bold transition text-center disabled:cursor-not-allowed disabled:opacity-40"
                                         :class="form.amount === amt.toString() ? 'border-emerald-600 bg-emerald-50 text-emerald-800 font-black' : 'border-slate-200 text-slate-700 hover:bg-slate-50'"
                                         @click="setAmount(amt)"
                                     >
@@ -861,10 +889,12 @@ const isWithdrawn = computed(() => {
                                 <input
                                     v-model="form.amount"
                                     type="number"
-                                    min="1000"
-                                    step="1000"
+                                    min="1"
+                                    :max="remainingAmount"
+                                    step="1"
                                     class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                                     placeholder="Nominal lainnya..."
+                                    @input="normalizeAmount"
                                 />
                             </div>
 
@@ -1004,7 +1034,8 @@ const isWithdrawn = computed(() => {
                                             v-for="amt in presetAmounts"
                                             :key="amt"
                                             type="button"
-                                            class="rounded-xl border py-2 text-xs font-bold transition text-center"
+                                            :disabled="amt > remainingAmount"
+                                            class="rounded-xl border py-2 text-xs font-bold transition text-center disabled:cursor-not-allowed disabled:opacity-40"
                                             :class="form.amount === amt.toString() ? 'border-emerald-600 bg-emerald-50 text-emerald-800 font-black' : 'border-slate-200 text-slate-700 hover:bg-slate-50'"
                                             @click="setAmount(amt)"
                                         >
@@ -1014,10 +1045,12 @@ const isWithdrawn = computed(() => {
                                     <input
                                         v-model="form.amount"
                                         type="number"
-                                        min="1000"
-                                        step="1000"
+                                        min="1"
+                                        :max="remainingAmount"
+                                        step="1"
                                         class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                                         placeholder="Nominal lainnya..."
+                                        @input="normalizeAmount"
                                     />
                                     <span v-if="form.errors.amount" class="mt-1 block text-xs text-red-600">{{ form.errors.amount }}</span>
                                 </div>

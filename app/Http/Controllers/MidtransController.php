@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class MidtransController extends Controller
 {
@@ -28,7 +29,7 @@ class MidtransController extends Controller
         abort_unless($campaign->acceptsDonations(), 422, $campaign->donationAvailabilityMessage());
 
         $validated = $request->validate([
-            'amount' => ['required', 'integer', 'min:1000', 'max:1000000000'],
+            'amount' => ['required', 'integer', 'min:1', 'max:1000000000'],
             'donor_name' => ['nullable', 'string', 'max:100'],
             'donor_email' => ['nullable', 'email', 'max:100'],
             'donor_phone' => ['nullable', 'string', 'max:30'],
@@ -36,6 +37,17 @@ class MidtransController extends Controller
         ]);
 
         $amount = (int) $validated['amount'];
+        $remainingAmount = $this->remainingAmount($campaign);
+
+        if ($remainingAmount === 0) {
+            throw ValidationException::withMessages(['amount' => 'Target donasi sudah tercapai.']);
+        }
+
+        if ($amount > $remainingAmount) {
+            throw ValidationException::withMessages([
+                'amount' => 'Nominal donasi maksimal '.number_format($remainingAmount, 0, ',', '.').' sesuai sisa target.',
+            ]);
+        }
 
         // Enkripsi nominal donasi dengan Paillier Cryptosystem
         $encryptedAmount = $encryptor->encrypt($amount);
@@ -104,6 +116,18 @@ class MidtransController extends Controller
                 'message' => 'Gagal terhubung ke Midtrans. Pastikan Server Key Midtrans Sandbox sudah benar di Pengaturan Admin atau .env. Error: ' . $e->getMessage(),
             ], 422);
         }
+    }
+
+    private function remainingAmount(Campaign $campaign): int
+    {
+        $paillier = app(PaillierService::class);
+        $ciphertexts = $campaign->donations()
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->pluck('encrypted_amount')
+            ->all();
+        $collected = $ciphertexts === [] ? 0 : $paillier->decrypt($paillier->add(...$ciphertexts));
+
+        return max(0, (int) $campaign->target_amount - $collected);
     }
 
     /**

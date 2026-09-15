@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Campaign;
+use App\Services\PaillierService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -42,9 +43,12 @@ class CampaignController extends Controller
         ]);
     }
 
-    public function show(Campaign $campaign): Response
+    public function show(Campaign $campaign, PaillierService $paillier): Response
     {
         $campaign->load(['organizer:id,name', 'donations' => fn ($query) => $query->latest()]);
+        $collectedAmount = $this->collectedAmount($campaign, $paillier);
+        $remainingAmount = max(0, (int) $campaign->target_amount - $collectedAmount);
+        $donationOpen = $campaign->acceptsDonations() && $remainingAmount > 0;
 
         return Inertia::render('Campaigns/Show', [
             'campaign' => [
@@ -53,8 +57,10 @@ class CampaignController extends Controller
                 'payout_bank_name' => $campaign->payout_bank_name,
                 'payout_account_number' => $campaign->payout_account_number,
                 'payout_account_name' => $campaign->payout_account_name,
-                'donation_open' => $campaign->acceptsDonations(),
-                'donation_message' => $campaign->acceptsDonations() ? 'Donasi sedang dibuka.' : $campaign->donationAvailabilityMessage(),
+                'collected_amount' => $collectedAmount,
+                'remaining_amount' => $remainingAmount,
+                'donation_open' => $donationOpen,
+                'donation_message' => $remainingAmount === 0 ? 'Target donasi sudah tercapai.' : ($campaign->acceptsDonations() ? 'Donasi sedang dibuka.' : $campaign->donationAvailabilityMessage()),
                 'donations' => $campaign->donations->map(fn ($donation) => [
                     'id' => $donation->id,
                     'donor_name' => $donation->donor_name ?? 'Dermawan Baik',
@@ -69,6 +75,16 @@ class CampaignController extends Controller
                 ])->values(),
             ],
         ]);
+    }
+
+    private function collectedAmount(Campaign $campaign, PaillierService $paillier): int
+    {
+        $ciphertexts = $campaign->donations()
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->pluck('encrypted_amount')
+            ->all();
+
+        return $ciphertexts === [] ? 0 : $paillier->decrypt($paillier->add(...$ciphertexts));
     }
 
     public function store(Request $request): RedirectResponse

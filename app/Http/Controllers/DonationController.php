@@ -8,6 +8,7 @@ use App\Services\DonationAmountEncryptor;
 use App\Services\PaillierService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,7 +20,7 @@ class DonationController extends Controller
         abort_unless($campaign->acceptsDonations(), 422, $campaign->donationAvailabilityMessage());
 
         $validated = $request->validate([
-            'amount' => ['required', 'integer', 'min:1000', 'max:1000000000'],
+            'amount' => ['required', 'integer', 'min:1', 'max:1000000000'],
             'payment_method' => ['required', 'string', 'max:50'],
             'donor_name' => ['nullable', 'string', 'max:100'],
             'donor_email' => ['nullable', 'email', 'max:100'],
@@ -29,6 +30,17 @@ class DonationController extends Controller
         ]);
 
         $amount = (int) $validated['amount'];
+        $remainingAmount = $this->remainingAmount($campaign);
+
+        if ($remainingAmount === 0) {
+            throw ValidationException::withMessages(['amount' => 'Target donasi sudah tercapai.']);
+        }
+
+        if ($amount > $remainingAmount) {
+            throw ValidationException::withMessages([
+                'amount' => 'Nominal donasi maksimal '.number_format($remainingAmount, 0, ',', '.').' sesuai sisa target.',
+            ]);
+        }
 
         // Enkripsi nominal donasi dengan homomorphic Paillier cryptosystem
         $encryptedAmount = $encryptor->encrypt($amount);
@@ -67,6 +79,18 @@ class DonationController extends Controller
         ]);
 
         return back()->with('status', 'Donasi berhasil diajukan dengan hash blockchain ' . substr($txHash, 0, 10) . '... Silakan transfer ke rekening resmi SafeGive.');
+    }
+
+    private function remainingAmount(Campaign $campaign): int
+    {
+        $paillier = app(PaillierService::class);
+        $ciphertexts = $campaign->donations()
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->pluck('encrypted_amount')
+            ->all();
+        $collected = $ciphertexts === [] ? 0 : $paillier->decrypt($paillier->add(...$ciphertexts));
+
+        return max(0, (int) $campaign->target_amount - $collected);
     }
 
     public function history(Request $request): Response
