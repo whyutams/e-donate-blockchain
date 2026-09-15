@@ -7,6 +7,7 @@ use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\VerificationProfileController;
 use App\Http\Controllers\AdminVerificationController;
 use App\Http\Controllers\DonationController;
+use App\Http\Controllers\CampaignWithdrawalController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
 
@@ -25,6 +26,7 @@ Route::middleware('auth')->group(function () {
 	Route::get('/my-campaigns', [CampaignController::class, 'mine'])->name('campaigns.mine');
 	Route::post('/campaigns/{campaign}/donations', [DonationController::class, 'store'])->name('campaigns.donations.store');
 	Route::get('/transactions', [DonationController::class, 'history'])->name('transactions.index');
+	Route::post('/campaigns/{campaign}/withdraw', [CampaignWithdrawalController::class, 'store'])->name('campaigns.withdraw');
 	Route::get('/panduan', fn () => \Inertia\Inertia::render('Guide'))->name('guide');
 
 	Route::middleware(EnsureUserIsAdmin::class)->prefix('admin')->name('admin.')->group(function () {

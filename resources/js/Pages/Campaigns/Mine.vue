@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import { createWalletClient, custom } from 'viem';
+import { polygonAmoy } from 'viem/chains';
+import { ref } from 'vue';
+import { campaignContractAbi, web3ContractAddress } from '../../types/web3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { IconCalendar, IconEye, IconHeart, IconPlus, IconTrash } from '@tabler/icons-vue';
 
@@ -14,9 +18,15 @@ interface Campaign {
     donors_count: number;
     ends_at: string | null;
     status: 'draft' | 'active' | 'goal_reached' | 'expired' | 'withdrawn';
+    withdrawal_status: 'not_ready' | 'pending' | 'confirmed' | 'failed';
+    can_withdraw: boolean;
+    blockchain_campaign_id: string | null;
+    wallet_address: string | null;
 }
 
 const props = defineProps<{ campaigns: Campaign[]; canCreate: boolean }>();
+const withdrawalId = ref<number | null>(null);
+const withdrawalError = ref('');
 
 const formatRupiah = (value: number): string => new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -39,6 +49,43 @@ const statusLabel: Record<Campaign['status'], string> = {
 const removeCampaign = (id: number) => {
     if (window.confirm('Hapus kampanye ini? Kampanye dengan donasi terkonfirmasi tidak dapat dihapus.')) {
         router.delete(`/campaigns/${id}`, { preserveScroll: true });
+    }
+};
+
+const withdraw = async (campaign: Campaign) => {
+    if (!web3ContractAddress || !campaign.blockchain_campaign_id) {
+        withdrawalError.value = 'Smart contract dan Campaign ID belum dikonfigurasi.';
+        return;
+    }
+
+    const ethereum = (window as Window & { ethereum?: any }).ethereum;
+    if (!ethereum) {
+        withdrawalError.value = 'Pasang MetaMask atau Rabby terlebih dahulu.';
+        return;
+    }
+
+    withdrawalId.value = campaign.id;
+    withdrawalError.value = '';
+    try {
+        const [account] = await ethereum.request({ method: 'eth_requestAccounts' }) as [`0x${string}`];
+        const client = createWalletClient({ chain: polygonAmoy, transport: custom(ethereum) });
+        const hash = await client.writeContract({
+            address: web3ContractAddress,
+            abi: campaignContractAbi,
+            functionName: 'withdraw',
+            args: [BigInt(campaign.blockchain_campaign_id)],
+            account,
+        });
+        await fetch(`/campaigns/${campaign.id}/withdraw`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
+            body: JSON.stringify({ transaction_hash: hash }),
+        });
+        router.reload({ only: ['campaigns'] });
+    } catch (error) {
+        withdrawalError.value = error instanceof Error ? error.message : 'Transaksi pencairan gagal.';
+    } finally {
+        withdrawalId.value = null;
     }
 };
 </script>
@@ -69,10 +116,11 @@ const removeCampaign = (id: number) => {
                         <div class="mt-5 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-600" :style="{ width: `${Math.min(campaign.progress_percentage, 100)}%` }" /></div>
                         <div class="mt-3 flex items-center justify-between text-sm"><span class="font-bold text-emerald-700">{{ campaign.progress_percentage.toFixed(2) }}%</span><span class="font-bold text-slate-800">{{ formatRupiah(campaign.target_amount) }}</span></div>
                         <div class="mt-4 flex items-center justify-between text-xs text-slate-500"><span class="inline-flex items-center gap-1.5"><IconCalendar class="h-4 w-4" />{{ formatDate(campaign.ends_at) }}</span><span>{{ campaign.donors_count }} donatur</span></div>
-                        <div class="mt-5 flex gap-2"><Link :href="`/campaigns/${campaign.id}`" class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"><IconEye class="h-4 w-4" />Detail</Link><button v-if="campaign.donors_count === 0" type="button" class="inline-flex items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50" title="Hapus kampanye" @click="removeCampaign(campaign.id)"><IconTrash class="h-4 w-4" /></button></div>
+                        <div class="mt-5 flex flex-wrap gap-2"><Link :href="`/campaigns/${campaign.id}`" class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"><IconEye class="h-4 w-4" />Detail</Link><button v-if="campaign.donors_count === 0" type="button" class="inline-flex items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50" title="Hapus kampanye" @click="removeCampaign(campaign.id)"><IconTrash class="h-4 w-4" /></button><button type="button" :disabled="!campaign.can_withdraw || withdrawalId === campaign.id" class="inline-flex flex-1 items-center justify-center rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-40" :title="campaign.can_withdraw ? 'Cairkan dana melalui wallet' : 'Target belum tercapai atau batas waktu belum lewat'" @click="withdraw(campaign)">{{ withdrawalId === campaign.id ? 'Menunggu wallet...' : campaign.withdrawal_status === 'pending' ? 'Pencairan diproses' : 'Cairkan dana' }}</button></div>
                     </div>
                 </article>
             </section>
+            <p v-if="withdrawalError" class="rounded-xl bg-red-50 p-4 text-sm text-red-700">{{ withdrawalError }}</p>
             <div v-else class="rounded-2xl border border-dashed border-[#cbd8c6] bg-white p-12 text-center"><p class="text-sm text-slate-500">Anda belum memiliki kampanye.</p><Link v-if="canCreate" href="/campaigns/create" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800"><IconPlus class="h-4 w-4" />Buat kampanye pertama</Link></div>
         </div>
     </AppLayout>

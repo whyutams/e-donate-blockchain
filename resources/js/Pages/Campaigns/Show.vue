@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, onBeforeUnmount } from 'vue';
+import { createWalletClient, custom, parseEther } from 'viem';
+import { polygonAmoy } from 'viem/chains';
+import { campaignContractAbi, web3ContractAddress } from '../../types/web3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { IconArrowLeft, IconCalendar, IconCheck, IconCopy, IconLock, IconWallet } from '@tabler/icons-vue';
 
@@ -28,6 +31,7 @@ interface Campaign {
     donation_open: boolean;
     donation_message: string;
     wallet_address: string;
+    blockchain_campaign_id: string | null;
     organizer: { name: string };
     donations: Donation[];
 }
@@ -45,6 +49,7 @@ const processingSteps = [
     'Membuat commitment privasi...',
     'Mencatat transaksi untuk konfirmasi blockchain...',
 ];
+const maticIdrRate = Number(import.meta.env.VITE_MATIC_IDR_RATE || 20000000);
 const submitDonation = () => {
     let step = 0;
     processingStep.value = processingSteps[step];
@@ -61,6 +66,41 @@ const submitDonation = () => {
             processingStep.value = '';
         },
     });
+};
+const donateWithWallet = async () => {
+    if (!form.amount || Number(form.amount) < 1000) {
+        form.setError('amount', 'Masukkan nominal minimal Rp1.000.');
+        return;
+    }
+    if (!web3ContractAddress || !props.campaign.blockchain_campaign_id) {
+        form.setError('transaction_hash', 'Smart contract dan Campaign ID belum dikonfigurasi.');
+        return;
+    }
+    const ethereum = (window as Window & { ethereum?: any }).ethereum;
+    if (!ethereum) {
+        form.setError('transaction_hash', 'Pasang MetaMask atau Rabby terlebih dahulu.');
+        return;
+    }
+    processingStep.value = 'Membuka MetaMask/Rabby...';
+    try {
+        const [account] = await ethereum.request({ method: 'eth_requestAccounts' }) as [`0x${string}`];
+        const client = createWalletClient({ chain: polygonAmoy, transport: custom(ethereum) });
+        processingStep.value = 'Menunggu persetujuan transaksi di wallet...';
+        const hash = await client.writeContract({
+            address: web3ContractAddress,
+            abi: campaignContractAbi,
+            functionName: 'donate',
+            args: [BigInt(props.campaign.blockchain_campaign_id)],
+            value: parseEther((Number(form.amount) / maticIdrRate).toFixed(18)),
+            account,
+        });
+        form.transaction_hash = hash;
+        processingStep.value = 'Menyimpan hash transaksi ke SafeGive...';
+        submitDonation();
+    } catch (error) {
+        processingStep.value = '';
+        form.setError('transaction_hash', error instanceof Error ? error.message : 'Transaksi wallet dibatalkan.');
+    }
 };
 onBeforeUnmount(() => { if (processingTimer) clearInterval(processingTimer); });
 </script>
@@ -98,14 +138,15 @@ onBeforeUnmount(() => { if (processingTimer) clearInterval(processingTimer); });
 
                 <section class="rounded-2xl border border-[#dce6d8] bg-white p-6 shadow-sm">
                     <div class="flex items-center gap-2"><IconWallet class="h-5 w-5 text-emerald-700" /><h2 class="text-lg font-extrabold text-slate-900">Catat donasi on-chain</h2></div>
-                    <p class="mt-2 text-sm leading-relaxed text-slate-500">Masukkan nominal biasa. Sistem akan mengenkripsi dan membuat commitment secara otomatis di backend.</p>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-500">Masukkan nominal biasa. Sistem akan mengenkripsi dan membuat commitment secara otomatis di backend.</p><Link href="/panduan" class="mt-2 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-800">Buka panduan langkah transaksi <span class="ml-1">→</span></Link>
                     <div class="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600"><strong>Yang perlu disiapkan:</strong> nominal donasi dan transaction hash dari wallet. Jangan memasukkan private key atau seed phrase.</div>
                     <div v-if="!campaign.donation_open" class="mt-5 rounded-xl bg-amber-50 p-4 text-sm leading-relaxed text-amber-800">{{ campaign.donation_message }}</div>
                     <form v-else class="mt-5 space-y-4" @submit.prevent="submitDonation">
                         <label class="block"><span class="text-sm font-bold text-slate-800">Nominal donasi (rupiah)</span><input v-model="form.amount" type="number" min="1000" step="1000" class="mt-2 w-full rounded-xl border-slate-200 text-sm" placeholder="Contoh: 100000" /><span v-if="form.errors.amount" class="mt-1 block text-xs text-red-600">{{ form.errors.amount }}</span></label>
-                        <label class="block"><span class="text-sm font-bold text-slate-800">Transaction hash dari wallet</span><input v-model="form.transaction_hash" class="mt-2 w-full rounded-xl border-slate-200 font-mono text-sm" placeholder="0x..." /><span v-if="form.errors.transaction_hash" class="mt-1 block text-xs text-red-600">{{ form.errors.transaction_hash }}</span></label>
-                        <label class="block"><span class="text-sm font-bold text-slate-800">Nomor block (opsional)</span><input v-model="form.block_number" type="number" class="mt-2 w-full rounded-xl border-slate-200 text-sm" placeholder="Diisi setelah transaksi masuk blok" /></label>
-                        <button type="submit" :disabled="form.processing" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60"><IconCheck class="h-4 w-4" />{{ form.processing ? 'Memproses donasi...' : 'Catat transaksi' }}</button>
+                        <label class="block"><span class="text-sm font-bold text-slate-800">Transaction hash dari wallet</span><p class="mt-1 text-xs leading-relaxed text-slate-500">Buka popup MetaMask/Rabby setelah menyetujui transaksi, salin hash yang diawali <code>0x</code>, lalu tempel di sini.</p><input v-model="form.transaction_hash" class="mt-2 w-full rounded-xl border-slate-200 font-mono text-sm" placeholder="0x..." /><span v-if="form.errors.transaction_hash" class="mt-1 block text-xs text-red-600">{{ form.errors.transaction_hash }}</span></label>
+                        <label class="block"><span class="text-sm font-bold text-slate-800">Nomor block (opsional)</span><p class="mt-1 text-xs leading-relaxed text-slate-500">Buka transaction hash di PolygonScan Amoy. Salin field Block jika sudah tersedia; jika belum, biarkan kosong.</p><input v-model="form.block_number" type="number" class="mt-2 w-full rounded-xl border-slate-200 text-sm" placeholder="Contoh: 19842109" /></label>
+                        <button type="button" :disabled="form.processing" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60" @click="donateWithWallet"><IconWallet class="h-4 w-4" />{{ form.processing ? 'Memproses donasi...' : 'Donasi melalui MetaMask/Rabby' }}</button>
+                        <button type="submit" :disabled="form.processing" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60"><IconCheck class="h-4 w-4" />Catat hash manual untuk testing</button>
                         <div v-if="form.processing" class="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800" role="status" aria-live="polite">{{ processingStep }}</div>
                         <p v-if="form.recentlySuccessful" class="text-sm font-semibold text-emerald-700">Donasi berhasil dicatat dan menunggu konfirmasi blockchain.</p>
                     </form>

@@ -77,6 +77,7 @@ class CampaignController extends Controller
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'wallet_address' => ['required', 'string', 'max:255'],
+            'blockchain_campaign_id' => ['nullable', 'integer', 'min:0'],
         ]);
 
         Campaign::create([
@@ -90,6 +91,7 @@ class CampaignController extends Controller
             'ends_at' => $validated['ends_at'],
             'image_path' => $request->file('image')?->store('campaigns', 'public'),
             'wallet_address' => $validated['wallet_address'],
+            'blockchain_campaign_id' => $validated['blockchain_campaign_id'] ?? null,
             'status' => 'active',
         ]);
 
@@ -150,6 +152,9 @@ class CampaignController extends Controller
             'starts_at' => $campaign->starts_at?->toIso8601String(),
             'ends_at' => $campaign->ends_at?->toIso8601String(),
             'status' => $campaign->status,
+            'blockchain_campaign_id' => $campaign->blockchain_campaign_id,
+            'withdrawal_status' => $campaign->withdrawal_status ?? 'not_ready',
+            'can_withdraw' => $campaign->canWithdraw(),
             'donation_open' => $campaign->acceptsDonations(),
             'donation_message' => $campaign->acceptsDonations() ? 'Donasi sedang dibuka.' : $campaign->donationAvailabilityMessage(),
             'organizer' => $campaign->organizer,

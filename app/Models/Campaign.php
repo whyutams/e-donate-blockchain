@@ -25,6 +25,9 @@ class Campaign extends Model
         'status',
         'wallet_address',
         'blockchain_campaign_id',
+        'withdrawal_transaction_hash',
+        'withdrawal_status',
+        'withdrawn_at',
     ];
 
     protected function casts(): array
@@ -35,6 +38,7 @@ class Campaign extends Model
             'donors_count' => 'integer',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'withdrawn_at' => 'datetime',
         ];
     }
 
@@ -75,5 +79,14 @@ class Campaign extends Model
         }
 
         return 'Jadwal donasi belum lengkap.';
+    }
+
+    public function canWithdraw(?Carbon $at = null): bool
+    {
+        $at ??= now();
+
+        return in_array($this->status, ['active', 'goal_reached', 'expired'], true)
+            && $this->withdrawal_status === 'not_ready'
+            && ((float) $this->progress_percentage >= 100 || ($this->ends_at && $at->isAfter($this->ends_at)));
     }
 }

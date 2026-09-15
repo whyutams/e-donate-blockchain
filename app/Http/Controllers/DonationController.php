@@ -19,7 +19,7 @@ class DonationController extends Controller
 
         $validated = $request->validate([
             'amount' => ['required', 'integer', 'min:1000', 'max:1000000000'],
-            'transaction_hash' => ['required', 'string', 'max:255', 'unique:donations,transaction_hash'],
+            'transaction_hash' => ['required', 'string', 'regex:/^0x[a-fA-F0-9]{64}$/', 'unique:donations,transaction_hash'],
             'block_number' => ['nullable', 'integer', 'min:0'],
         ]);
 
