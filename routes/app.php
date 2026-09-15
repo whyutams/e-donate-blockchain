@@ -12,10 +12,11 @@ use App\Http\Controllers\AdminDonationController;
 use App\Http\Controllers\AdminWithdrawalController;
 use App\Http\Controllers\CampaignWithdrawalController;
 use App\Http\Controllers\MidtransController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
 Route::middleware('auth')->group(function () {
-	Route::get('/dashboard', fn () => \Inertia\Inertia::render('Dashboard'))->name('dashboard');
+	Route::get('/dashboard', DashboardController::class)->name('dashboard');
 	Route::get('/profile', function (Request $request) {
 		return \Inertia\Inertia::render('Profile', [
 			'verificationProfile' => $request->user()->verificationProfile?->only([

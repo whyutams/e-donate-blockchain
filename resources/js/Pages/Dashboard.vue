@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '../Layouts/AppLayout.vue';
 import {
     IconShieldCheck,
     IconHeartHandshake,
-    IconBuildingBank,
     IconReceipt,
-    IconUsers,
     IconTrendingUp,
     IconSearch,
     IconCopy,
@@ -16,11 +14,9 @@ import {
     IconFlame,
     IconCoins,
     IconClock,
-    IconLock,
     IconArrowUpRight,
     IconX,
     IconSparkles,
-    IconQrcode,
 } from '@tabler/icons-vue';
 
 interface User {
@@ -51,7 +47,7 @@ interface Transaction {
 }
 
 interface Campaign {
-    id: string;
+    id: string | number;
     title: string;
     category: string;
     target: number;
@@ -64,6 +60,8 @@ interface Campaign {
 const page = usePage<{
     auth: { user: User | null };
     admin_bank: AdminBank;
+    campaigns: Campaign[];
+    transactions: Transaction[];
 }>();
 
 const user = computed(() => page.props.auth.user);
@@ -83,7 +81,7 @@ const copiedItem = ref<string | null>(null);
 const isDonateModalOpen = ref(false);
 
 // Modal state
-const selectedCampaignId = ref('camp-1');
+const selectedCampaignId = ref(String(page.props.campaigns?.[0]?.id ?? ''));
 const selectedAmount = ref<number>(100000);
 const customAmount = ref<string>('');
 const selectedMethod = ref('BCA');
@@ -103,109 +101,12 @@ const paymentMethods = [
     'DANA',
 ];
 
-const campaigns = ref<Campaign[]>([
-    {
-        id: 'camp-1',
-        title: 'Bantuan Medis Darurat Korban Gempa & Bencana',
-        category: 'Kemanusiaan',
-        target: 150000000,
-        collected: 118450000,
-        donorsCount: 428,
-        daysLeft: 5,
-        urgency: 'high',
-    },
-    {
-        id: 'camp-2',
-        title: 'Beasiswa Pendidikan & Laptop Siswa Berprestasi',
-        category: 'Pendidikan',
-        target: 85000000,
-        collected: 62300000,
-        donorsCount: 215,
-        daysLeft: 12,
-        urgency: 'medium',
-    },
-    {
-        id: 'camp-3',
-        title: 'Pembangunan Sumber Air Bersih Wilayah Pelosok',
-        category: 'Infrastruktur',
-        target: 120000000,
-        collected: 98000000,
-        donorsCount: 340,
-        daysLeft: 8,
-        urgency: 'high',
-    },
-]);
-
-const transactions = ref<Transaction[]>([
-    {
-        id: 'tx-001',
-        hash: '0x8f192b49c71a39d891b0f1a92e10a2f4',
-        campaign: 'Bantuan Medis Darurat Korban Gempa & Bencana',
-        category: 'Kemanusiaan',
-        amount: 250000,
-        paymentMethod: 'BCA',
-        referenceCode: 'SG-2609-8812',
-        date: '14 Menit yang lalu',
-        blockNumber: 19842109,
-        status: 'verified',
-    },
-    {
-        id: 'tx-002',
-        hash: '0x4c278a1f81d2937e0c4b2e8174df8342',
-        campaign: 'Beasiswa Pendidikan & Laptop Siswa Berprestasi',
-        category: 'Pendidikan',
-        amount: 500000,
-        paymentMethod: 'Mandiri',
-        referenceCode: 'SG-2609-5431',
-        date: '2 Jam yang lalu',
-        blockNumber: 19841850,
-        status: 'verified',
-    },
-    {
-        id: 'tx-003',
-        hash: '0x99a4e21b8c1945a0b73c4d119e34a781',
-        campaign: 'Pembangunan Sumber Air Bersih Wilayah Pelosok',
-        category: 'Infrastruktur',
-        amount: 100000,
-        paymentMethod: 'QRIS',
-        referenceCode: 'SG-2609-9021',
-        date: 'Kemarin, 19:42',
-        blockNumber: 19839401,
-        status: 'verified',
-    },
-    {
-        id: 'tx-004',
-        hash: '0x3e18a902f4cb71369d12a9e8841029c5',
-        campaign: 'Bantuan Medis Darurat Korban Gempa & Bencana',
-        category: 'Kemanusiaan',
-        amount: 150000,
-        paymentMethod: 'DANA',
-        referenceCode: 'SG-2609-2244',
-        date: '12 Sep 2026',
-        blockNumber: 19834112,
-        status: 'verified',
-    },
-    {
-        id: 'tx-005',
-        hash: '0x7b54a1082c9e421a8f6d3391b0e51249',
-        campaign: 'Penanaman 1.000 Pohon Mangrove Pesisir',
-        category: 'Lingkungan',
-        amount: 75000,
-        paymentMethod: 'BNI',
-        referenceCode: 'SG-2609-1190',
-        date: '10 Sep 2026',
-        blockNumber: 19828941,
-        status: 'verified',
-    },
-]);
+const campaigns = computed(() => page.props.campaigns ?? []);
+const transactions = computed(() => page.props.transactions ?? []);
 
 // Summary Stats
 const totalDonationValue = computed(() => {
     return transactions.value.reduce((sum, tx) => sum + tx.amount, 0);
-});
-
-const verifiedTransactionsCount = computed(() => {
-    return transactions.value.filter((tx) => tx.status === 'verified').length;
 });
 
 // Filtered Transactions
@@ -271,49 +172,33 @@ const handleCustomAmountInput = (e: Event) => {
     }
 };
 
-// Submit Simulation
 const submitDonation = () => {
     if (!selectedAmount.value || selectedAmount.value < 10000) return;
 
-    isSubmittingTx.value = true;
-    const targetCamp = campaigns.value.find((c) => c.id === selectedCampaignId.value) || campaigns.value[0];
-
-    setTimeout(() => {
-        const randomHex = Array.from({ length: 32 }, () =>
-            Math.floor(Math.random() * 16).toString(16)
-        ).join('');
-        const newTxHash = `0x${randomHex}`;
-        const newBlock = 19842110 + Math.floor(Math.random() * 20);
-        const refCode = `SG-${Date.now().toString().slice(-4)}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-        const newTx: Transaction = {
-            id: `tx-${Date.now()}`,
-            hash: newTxHash,
-            campaign: targetCamp.title,
-            category: targetCamp.category,
-            amount: selectedAmount.value,
-            paymentMethod: selectedMethod.value,
-            referenceCode: refCode,
-            date: 'Baru saja',
-            blockNumber: newBlock,
-            status: 'verified',
-        };
-
-        transactions.value.unshift(newTx);
-        targetCamp.collected += selectedAmount.value;
-        targetCamp.donorsCount += 1;
-
-        isSubmittingTx.value = false;
-        txSuccessMessage.value = true;
-
-        setTimeout(() => {
-            txSuccessMessage.value = false;
-            isDonateModalOpen.value = false;
-            selectedAmount.value = 100000;
-            customAmount.value = '';
-            donorNote.value = '';
-        }, 1800);
-    }, 1000);
+    router.post(`/campaigns/${selectedCampaignId.value}/donations`, {
+        amount: selectedAmount.value,
+        payment_method: selectedMethod.value,
+        donor_name: donorName.value || undefined,
+        donor_note: donorNote.value || undefined,
+    }, {
+        preserveScroll: true,
+        onStart: () => {
+            isSubmittingTx.value = true;
+        },
+        onSuccess: () => {
+            txSuccessMessage.value = true;
+            setTimeout(() => {
+                txSuccessMessage.value = false;
+                isDonateModalOpen.value = false;
+                selectedAmount.value = 100000;
+                customAmount.value = '';
+                donorNote.value = '';
+            }, 1800);
+        },
+        onFinish: () => {
+            isSubmittingTx.value = false;
+        },
+    });
 };
 </script>
 
@@ -380,7 +265,7 @@ const submitDonation = () => {
             </section>
 
             <!-- KPI Summary Cards -->
-            <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section class="grid grid-cols-1 gap-4">
                 <!-- Card 1: Total Kontribusi -->
                 <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                     <div class="flex items-center justify-between">
@@ -402,68 +287,6 @@ const submitDonation = () => {
                     </div>
                 </div>
 
-                <!-- Card 2: Transaksi On-Chain -->
-                <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Transaksi Terenkripsi</span>
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100/80 text-teal-700">
-                            <IconShieldCheck class="h-5 w-5" stroke-width="2" />
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-2xl font-extrabold tracking-tight text-slate-900">{{ verifiedTransactionsCount }} <span class="text-sm font-semibold text-slate-500">Hash</span></p>
-                        <div class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                            <IconCheck class="h-3.5 w-3.5" stroke-width="2.5" />
-                            <span>Enkripsi Paillier Valid</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Komitmen Hash:</span>
-                        <span class="font-mono font-bold text-slate-600">SHA-256 (0x...)</span>
-                    </div>
-                </div>
-
-                <!-- Card 3: Kampanye Didukung -->
-                <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Program Aktif</span>
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100/80 text-amber-700">
-                            <IconHeartHandshake class="h-5 w-5" stroke-width="2" />
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-2xl font-extrabold tracking-tight text-slate-900">3 <span class="text-sm font-semibold text-slate-500">Kampanye</span></p>
-                        <div class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-amber-700">
-                            <IconClock class="h-3.5 w-3.5" />
-                            <span>2 Kampanye Mendekati Target</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Pencairan Dana:</span>
-                        <span class="font-semibold text-slate-600">Target/Jatuh Tempo</span>
-                    </div>
-                </div>
-
-                <!-- Card 4: Jiwa Berdampak -->
-                <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Dampak Kebaikan</span>
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff0e9] text-[#c65d3d]">
-                            <IconUsers class="h-5 w-5" stroke-width="2" />
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-2xl font-extrabold tracking-tight text-slate-900">1.420+ <span class="text-sm font-semibold text-slate-500">Penerima</span></p>
-                        <div class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#c65d3d]">
-                            <IconSparkles class="h-3.5 w-3.5" />
-                            <span>Penerima Manfaat Terverifikasi</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Transparansi Penyaluran:</span>
-                        <span class="font-semibold text-slate-600">100% Terbuka</span>
-                    </div>
-                </div>
             </section>
 
             <!-- Main Split Layout -->
@@ -500,6 +323,14 @@ const submitDonation = () => {
                                     @click="activeFilter = 'verified'"
                                 >
                                     Terverifikasi
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded-lg px-3 py-1.5 transition"
+                                    :class="activeFilter === 'pending' ? 'bg-white text-amber-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                    @click="activeFilter = 'pending'"
+                                >
+                                    Menunggu
                                 </button>
                             </div>
                         </div>
@@ -573,9 +404,12 @@ const submitDonation = () => {
                                         </td>
 
                                         <td class="py-3.5 text-center">
-                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100/70 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                                Terverifikasi
+                                            <span
+                                                class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                                                :class="tx.status === 'verified' ? 'bg-emerald-100/70 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                            >
+                                                <span class="h-1.5 w-1.5 rounded-full" :class="tx.status === 'verified' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                                                {{ tx.status === 'verified' ? 'Terverifikasi' : 'Menunggu konfirmasi' }}
                                             </span>
                                         </td>
 
@@ -670,63 +504,8 @@ const submitDonation = () => {
                     </section>
                 </div>
 
-                <!-- Right Column: Central Admin Bank Account Card & Integrity Pillars (4 Cols) -->
+                <!-- Right Column: Integrity Pillars (4 Cols) -->
                 <div class="space-y-6 lg:col-span-4">
-                    <!-- Central Admin Bank Card -->
-                    <div class="relative overflow-hidden rounded-[24px] border border-emerald-300/80 bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-900 p-6 text-white shadow-xl">
-                        <!-- Glow effect -->
-                        <div class="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-emerald-400/20 blur-2xl"></div>
-
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-emerald-300 border border-white/20">
-                                    <IconBuildingBank class="h-4 w-4" />
-                                </div>
-                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-200">Rekening Resmi Donasi</span>
-                            </div>
-                            <span class="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300 border border-emerald-400/30">
-                                {{ adminBank.bank_code }}
-                            </span>
-                        </div>
-
-                        <div class="mt-5">
-                            <p class="text-xs text-emerald-200/80">{{ adminBank.bank_name }}</p>
-                            <div class="mt-1.5 flex items-center justify-between rounded-xl bg-white/10 px-3 py-2 border border-white/15 backdrop-blur-xs">
-                                <span class="font-mono text-base font-black tracking-wider text-white">
-                                    {{ adminBank.account_number }}
-                                </span>
-                                <button
-                                    type="button"
-                                    :title="copiedItem === 'admin-bank' ? 'Tersalin!' : 'Salin Nomor Rekening'"
-                                    class="rounded p-1 text-emerald-200 hover:text-white transition"
-                                    @click="copyToClipboard(adminBank.account_number, 'admin-bank')"
-                                >
-                                    <IconCheck v-if="copiedItem === 'admin-bank'" class="h-4 w-4 text-emerald-300" />
-                                    <IconCopy v-else class="h-4 w-4" />
-                                </button>
-                            </div>
-                            <p class="mt-1.5 text-xs font-semibold text-emerald-100">
-                                a.n. {{ adminBank.account_name }}
-                            </p>
-                        </div>
-
-                        <div class="mt-5 grid grid-cols-2 gap-3 border-t border-white/10 pt-4 text-xs">
-                            <div>
-                                <span class="text-[10px] text-emerald-300/70 uppercase tracking-wide">Penyaluran</span>
-                                <p class="mt-0.5 font-bold text-white">1 Rekening Tunggal</p>
-                            </div>
-                            <div>
-                                <span class="text-[10px] text-emerald-300/70 uppercase tracking-wide">Pencairan</span>
-                                <p class="mt-0.5 font-bold text-emerald-300">Target/Jatuh Tempo</p>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 rounded-xl bg-black/20 p-3 border border-white/10 text-[11px] text-emerald-100 flex items-start gap-2">
-                            <IconLock class="h-4 w-4 text-emerald-300 shrink-0 mt-0.5" />
-                            <span>Setiap dana donatur dikonfirmasi dan dicatat ke agregasi enkripsi Paillier homomorfik.</span>
-                        </div>
-                    </div>
-
                     <!-- Blockchain Integrity Pillars -->
                     <div class="rounded-[24px] border border-[#dce6d8] bg-white p-6 shadow-sm">
                         <h3 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
@@ -867,7 +646,7 @@ const submitDonation = () => {
                                 v-model="selectedCampaignId"
                                 class="w-full rounded-xl border border-[#dce6d8] bg-[#fcfdfa] px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                             >
-                                <option v-for="c in campaigns" :key="c.id" :value="c.id">
+                                <option v-for="c in campaigns" :key="c.id" :value="String(c.id)">
                                     {{ c.title }} ({{ c.category }})
                                 </option>
                             </select>
