@@ -26,7 +26,14 @@ class MidtransController extends Controller
         DonationAmountEncryptor $encryptor,
         MidtransService $midtrans
     ): JsonResponse {
-        abort_unless($campaign->acceptsDonations(), 422, $campaign->donationAvailabilityMessage());
+        $remainingAmount = $this->remainingAmount($campaign);
+        $isWithinSchedule = $campaign->starts_at && $campaign->ends_at
+            && now()->betweenIncluded($campaign->starts_at, $campaign->ends_at);
+        abort_unless(
+            $isWithinSchedule && ! in_array($campaign->status, ['withdrawn', 'expired'], true),
+            422,
+            $campaign->donationAvailabilityMessage()
+        );
 
         $validated = $request->validate([
             'amount' => ['required', 'integer', 'min:1', 'max:1000000000'],
@@ -37,8 +44,6 @@ class MidtransController extends Controller
         ]);
 
         $amount = (int) $validated['amount'];
-        $remainingAmount = $this->remainingAmount($campaign);
-
         if ($remainingAmount === 0) {
             throw ValidationException::withMessages(['amount' => 'Target donasi sudah tercapai.']);
         }

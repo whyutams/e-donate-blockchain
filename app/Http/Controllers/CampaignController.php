@@ -48,7 +48,19 @@ class CampaignController extends Controller
         $campaign->load(['organizer:id,name', 'donations' => fn ($query) => $query->latest()]);
         $collectedAmount = $this->collectedAmount($campaign, $paillier);
         $remainingAmount = max(0, (int) $campaign->target_amount - $collectedAmount);
-        $donationOpen = $campaign->acceptsDonations() && $remainingAmount > 0;
+        $progressPercentage = $campaign->target_amount > 0
+            ? min(100, round(($collectedAmount / $campaign->target_amount) * 100, 2))
+            : 0;
+        $effectiveStatus = $campaign->status;
+        if (in_array($campaign->status, ['active', 'goal_reached'], true)) {
+            $effectiveStatus = $remainingAmount === 0 ? 'goal_reached' : 'active';
+        }
+        $isWithinSchedule = $campaign->starts_at && $campaign->ends_at
+            && now()->betweenIncluded($campaign->starts_at, $campaign->ends_at);
+        $donationOpen = $effectiveStatus !== 'withdrawn'
+            && $effectiveStatus !== 'expired'
+            && $isWithinSchedule
+            && $remainingAmount > 0;
 
         return Inertia::render('Campaigns/Show', [
             'campaign' => [
@@ -59,8 +71,10 @@ class CampaignController extends Controller
                 'payout_account_name' => $campaign->payout_account_name,
                 'collected_amount' => $collectedAmount,
                 'remaining_amount' => $remainingAmount,
+                'progress_percentage' => $progressPercentage,
+                'status' => $effectiveStatus,
                 'donation_open' => $donationOpen,
-                'donation_message' => $remainingAmount === 0 ? 'Target donasi sudah tercapai.' : ($campaign->acceptsDonations() ? 'Donasi sedang dibuka.' : $campaign->donationAvailabilityMessage()),
+                'donation_message' => $remainingAmount === 0 ? 'Target donasi sudah tercapai.' : ($donationOpen ? 'Donasi sedang dibuka.' : ($isWithinSchedule ? 'Donasi belum tersedia.' : $campaign->donationAvailabilityMessage())),
                 'donations' => $campaign->donations->map(fn ($donation) => [
                     'id' => $donation->id,
                     'donor_name' => $donation->donor_name ?? 'Dermawan Baik',
