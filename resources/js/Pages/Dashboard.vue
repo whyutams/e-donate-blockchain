@@ -6,7 +6,6 @@ import {
     IconShieldCheck,
     IconHeartHandshake,
     IconReceipt,
-    IconTrendingUp,
     IconSearch,
     IconCopy,
     IconCheck,
@@ -14,7 +13,7 @@ import {
     IconFlame,
     IconCoins,
     IconClock,
-    IconArrowUpRight,
+    IconArrowUpRight, 
     IconX,
     IconSparkles,
 } from '@tabler/icons-vue';
@@ -218,12 +217,12 @@ const submitDonation = () => {
                         <div class="inline-flex items-center gap-2 rounded-full border border-emerald-300/60 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm">
                             <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             <IconSparkles class="h-3.5 w-3.5 text-emerald-600" />
-                            <span>Enkripsi Paillier & Ledger Kriptografis Aktif</span>
+                            <span>Catatan Donasi Terlindungi</span>
                         </div>
 
                         <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
                             <span class="rounded-md bg-white px-2.5 py-1 font-mono border border-slate-200 text-slate-700">Bank Transfer / QRIS</span>
-                            <span class="rounded-md bg-white px-2.5 py-1 font-mono border border-slate-200 text-slate-700">Block #19,842,109</span>
+                            <span class="rounded-md bg-white px-2.5 py-1 font-mono border border-slate-200 text-slate-700">Hash & Enkripsi Aktif</span>
                         </div>
                     </div>
 
@@ -233,7 +232,7 @@ const submitDonation = () => {
                             Selamat Datang, <span class="text-emerald-700">{{ user?.name || 'Sahabat Kebaikan' }}</span> 👋
                         </h1>
                         <p class="mt-3.5 text-sm sm:text-base leading-relaxed text-slate-600">
-                            Transfer donasi dengan mudah melalui <strong class="text-slate-800 font-semibold">Bank BCA, Mandiri, BRI, BNI, atau E-Wallet / QRIS</strong> ke rekening resmi SafeGive. Setiap donasi dienkripsi dengan Paillier cryptosystem dan tercatat permanen di ledger publik.
+                            Transfer donasi dengan mudah melalui <strong class="text-slate-800 font-semibold">Bank BCA, Mandiri, BRI, BNI, atau E-Wallet / QRIS</strong> ke rekening resmi SafeGive. Setiap donasi dicatat di database dengan nominal terenkripsi dan bukti hash untuk menjaga integritas catatan.
                         </p>
                     </div>
 
@@ -253,12 +252,12 @@ const submitDonation = () => {
                             class="inline-flex items-center gap-2 rounded-xl border border-[#dce6d8] bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-[#edf4e9] hover:text-emerald-800"
                         >
                             <IconReceipt class="h-4 w-4 text-emerald-600" stroke-width="2" />
-                            <span>Cek Ledger Kriptografis</span>
+                            <span>Lihat Catatan Donasi</span>
                         </a>
 
                         <div class="ml-auto hidden sm:flex items-center gap-2 text-xs text-slate-500">
                             <IconShieldCheck class="h-4 w-4 text-emerald-600" />
-                            <span>100% Auditabilitas Kriptografis</span>
+                                    <span>Catatan transaksi dapat diverifikasi</span>
                         </div>
                     </div>
                 </div>
@@ -269,21 +268,20 @@ const submitDonation = () => {
                 <!-- Card 1: Total Kontribusi -->
                 <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Donasi Tercatat</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Donasi Ditampilkan</span>
                         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100/80 text-emerald-700">
                             <IconCoins class="h-5 w-5" stroke-width="2" />
                         </div>
                     </div>
                     <div class="mt-3">
                         <p class="text-2xl font-extrabold tracking-tight text-slate-900">{{ formatRupiah(totalDonationValue) }}</p>
-                        <div class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                            <IconTrendingUp class="h-3.5 w-3.5" />
-                            <span>+16.4% dari bulan lalu</span>
+                        <div class="mt-1.5 text-xs font-semibold text-slate-500">
+                            Dari riwayat donasi yang ditampilkan
                         </div>
                     </div>
                     <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                         <span>Metode Pembayaran:</span>
-                        <span class="font-semibold text-slate-600">Bank & E-Wallet</span>
+                        <span class="font-semibold text-slate-600">Bank, QRIS & E-Wallet</span>
                     </div>
                 </div>
 
@@ -293,16 +291,16 @@ const submitDonation = () => {
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
                 <!-- Left Column: Transactions Ledger & Featured Campaigns (8 Cols) -->
                 <div class="space-y-8 lg:col-span-8">
-                    <!-- Blockchain Ledger Table Section -->
+                    <!-- Protected donation records -->
                     <section id="ledger-section" class="rounded-[24px] border border-[#dce6d8] bg-white p-6 shadow-sm sm:p-7">
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-5">
                             <div>
                                 <div class="flex items-center gap-2">
                                     <IconReceipt class="h-5 w-5 text-emerald-700" stroke-width="2" />
-                                    <h2 class="text-lg font-bold text-slate-900 tracking-tight">Ledger Transparansi Donasi</h2>
+                                    <h2 class="text-lg font-bold text-slate-900 tracking-tight">Catatan Donasi</h2>
                                 </div>
                                 <p class="mt-1 text-xs text-slate-500">
-                                    Daftar transaksi donasi tercatat di buku besar terenkripsi dengan bukti hash kriptografis 0x...
+                                    Daftar transaksi donasi Anda dengan hash sebagai bukti integritas catatan.
                                 </p>
                             </div>
 
@@ -355,7 +353,7 @@ const submitDonation = () => {
                                     <tr class="border-b border-[#e9efe6] text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                         <th class="pb-3 pl-2">Program Donasi</th>
                                         <th class="pb-3">Metode & Referensi</th>
-                                        <th class="pb-3">Hash Kriptografis (0x)</th>
+                                        <th class="pb-3">Bukti Hash</th>
                                         <th class="pb-3 text-right">Nominal</th>
                                         <th class="pb-3 text-center">Status</th>
                                         <th class="pb-3 pr-2 text-right">Waktu</th>
@@ -396,7 +394,7 @@ const submitDonation = () => {
                                                     <IconCopy v-else class="h-3.5 w-3.5" />
                                                 </button>
                                             </div>
-                                            <span class="text-[10px] text-slate-400 font-mono">Block #{{ tx.blockNumber }}</span>
+                                            <span class="text-[10px] text-slate-400 font-mono">No. catatan #{{ tx.blockNumber }}</span>
                                         </td>
 
                                         <td class="py-3.5 text-right">
@@ -504,15 +502,15 @@ const submitDonation = () => {
                     </section>
                 </div>
 
-                <!-- Right Column: Integrity Pillars (4 Cols) -->
+                <!-- Right Column: Record integrity -->
                 <div class="space-y-6 lg:col-span-4">
-                    <!-- Blockchain Integrity Pillars -->
+                    <!-- Record integrity -->
                     <div class="rounded-[24px] border border-[#dce6d8] bg-white p-6 shadow-sm">
                         <h3 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
                             <IconShieldCheck class="h-4 w-4 text-emerald-700" />
-                            <span>Pilar Integritas SafeGive</span>
+                            <span>Perlindungan Catatan</span>
                         </h3>
-                        <p class="mt-1 text-xs text-slate-500 leading-relaxed">Transparansi donasi dengan transfer bank Indonesia & enkripsi kriptografis.</p>
+                        <p class="mt-1 text-xs text-slate-500 leading-relaxed">Setiap donasi disimpan dengan perlindungan enkripsi dan hash.</p>
 
                         <div class="mt-4 space-y-3.5">
                             <div class="flex items-start gap-3">
@@ -520,8 +518,8 @@ const submitDonation = () => {
                                     1
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-800">Rekening Tunggal Resmi</p>
-                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Donatur hanya mentransfer ke rekening resmi SafeGive yang diaudit admin.</p>
+                                    <p class="text-xs font-bold text-slate-800">Rekening resmi</p>
+                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Pembayaran diarahkan ke rekening resmi yang dikelola admin.</p>
                                 </div>
                             </div>
 
@@ -530,8 +528,8 @@ const submitDonation = () => {
                                     2
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-800">Enkripsi Nominal Paillier</p>
-                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Nominal individu terlindungi secara homomorfik; progres dihitung dari perkalian modulo.</p>
+                                    <p class="text-xs font-bold text-slate-800">Nominal terenkripsi</p>
+                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Nominal donasi disimpan dalam bentuk terenkripsi untuk menjaga kerahasiaan.</p>
                                 </div>
                             </div>
 
@@ -540,8 +538,8 @@ const submitDonation = () => {
                                     3
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-800">Pencairan Terjadwal</p>
-                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Dana hanya dapat dicairkan penyelenggara jika target tercapai atau masa kampanye berakhir.</p>
+                                    <p class="text-xs font-bold text-slate-800">Bukti hash</p>
+                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Hash membantu memeriksa bahwa catatan transaksi tidak berubah.</p>
                                 </div>
                             </div>
                         </div>
@@ -550,27 +548,29 @@ const submitDonation = () => {
                     <!-- Live Audit Activity -->
                     <div class="rounded-[24px] border border-[#dce6d8] bg-white p-6 shadow-sm">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Aktivitas Ledger Terkini</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Transaksi Terbaru</span>
                             <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
                         </div>
 
-                        <div class="mt-4 space-y-3 font-mono text-[11px]">
+                        <div v-if="transactions.length > 0" class="mt-4 space-y-3 font-mono text-[11px]">
                             <div class="rounded-xl bg-[#f8faf6] p-2.5 border border-[#e8f0e5]">
                                 <div class="flex items-center justify-between text-slate-500">
-                                    <span>Blok #19842109</span>
-                                    <span class="text-emerald-700 font-semibold">Tervalidasi</span>
+                                    <span>{{ transactions[0].date }}</span>
+                                    <span class="text-emerald-700 font-semibold">{{ transactions[0].status === 'verified' ? 'Terkonfirmasi' : 'Menunggu' }}</span>
                                 </div>
-                                <p class="mt-1 text-slate-800 font-medium">Commitment SHA-256 donasi masuk berhasil dibuat</p>
+                                <p class="mt-1 text-slate-800 font-medium">{{ transactions[0].campaign }}</p>
+                                <p class="mt-1 text-slate-500">Hash {{ truncateHash(transactions[0].hash) }}</p>
                             </div>
 
                             <div class="rounded-xl bg-[#f8faf6] p-2.5 border border-[#e8f0e5]">
                                 <div class="flex items-center justify-between text-slate-500">
-                                    <span>Pencairan Dana</span>
-                                    <span class="text-slate-400">Kemarin</span>
+                                    <span>Metode pembayaran</span>
+                                    <span class="text-slate-400">{{ transactions[0].paymentMethod }}</span>
                                 </div>
-                                <p class="mt-1 text-slate-800 font-medium">Verifikasi rekening BCA penyelenggara sukses</p>
+                                <p class="mt-1 text-slate-800 font-medium">Referensi {{ transactions[0].referenceCode }}</p>
                             </div>
                         </div>
+                        <p v-else class="mt-4 rounded-xl bg-[#f8faf6] p-4 text-xs text-slate-500">Belum ada transaksi donasi.</p>
                     </div>
                 </div>
             </div>
@@ -613,8 +613,8 @@ const submitDonation = () => {
                         <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md">
                             <IconCheck class="h-6 w-6" stroke-width="2.5" />
                         </div>
-                        <h4 class="mt-2 text-sm font-bold">Donasi Berhasil Dicatat ke Ledger!</h4>
-                        <p class="mt-1 text-xs text-emerald-700">Hash kriptografis telah diterbitkan dan ditambahkan ke buku besar transparansi.</p>
+                        <h4 class="mt-2 text-sm font-bold">Donasi Berhasil Dicatat!</h4>
+                        <p class="mt-1 text-xs text-emerald-700">Catatan donasi tersimpan dan bukti hash telah dibuat.</p>
                     </div>
 
                     <template v-else>

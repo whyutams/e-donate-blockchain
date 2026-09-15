@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AdminBankSetting;
 use App\Models\Campaign;
 use App\Models\Donation;
+use App\Models\User;
+use App\Models\VerificationProfile;
 use App\Services\PaillierService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -55,6 +57,48 @@ class DashboardController extends Controller
             'blockNumber' => (int) ($donation->block_number ?? 0),
             'status' => $donation->status === 'confirmed' ? 'verified' : 'pending',
         ])->values();
+
+        if ($isAdmin) {
+            return Inertia::render('AdminDashboard', [
+                'stats' => [
+                    'users' => User::query()->count(),
+                    'campaigns' => Campaign::query()->count(),
+                    'donations' => Donation::query()->count(),
+                    'confirmedDonations' => Donation::query()->where('status', 'confirmed')->count(),
+                    'pendingDonations' => Donation::query()->where('status', 'pending')->count(),
+                    'pendingVerifications' => VerificationProfile::query()->where('status', 'pending')->count(),
+                    'pendingWithdrawals' => Campaign::query()->where('withdrawal_status', 'pending')->count(),
+                ],
+                'recentDonations' => Donation::query()
+                    ->with(['campaign:id,title', 'donor:id,name,email'])
+                    ->latest()
+                    ->limit(8)
+                    ->get()
+                    ->map(fn (Donation $donation) => [
+                        'id' => $donation->id,
+                        'campaign' => $donation->campaign?->title ?? 'Kampanye dihapus',
+                        'donor' => $donation->donor?->name ?? $donation->donor_name ?? 'Anonim',
+                        'amount' => $this->decryptAmount($donation->encrypted_amount, $paillier),
+                        'status' => $donation->status,
+                        'createdAt' => $donation->created_at?->translatedFormat('d M Y, H:i'),
+                    ])
+                    ->values(),
+                'recentCampaigns' => Campaign::query()
+                    ->with('organizer:id,name')
+                    ->latest()
+                    ->limit(6)
+                    ->get()
+                    ->map(fn (Campaign $campaign) => [
+                        'id' => $campaign->id,
+                        'title' => $campaign->title,
+                        'organizer' => $campaign->organizer?->name ?? 'Penyelenggara',
+                        'status' => $campaign->status,
+                        'progress' => (float) $campaign->progress_percentage,
+                        'target' => (int) $campaign->target_amount,
+                    ])
+                    ->values(),
+            ]);
+        }
 
         return Inertia::render('Dashboard', [
             'admin_bank' => AdminBankSetting::current()->only([
