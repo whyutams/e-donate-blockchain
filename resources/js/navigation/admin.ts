@@ -10,9 +10,19 @@ export const adminNavigation = [
         icon: 'verification',
     },
     {
-        label: 'Pengguna & Hak Akses',
-        href: '/management/users',
-        icon: 'users',
+        label: 'Data Donasi',
+        href: '/admin/donations',
+        icon: 'heart',
+    },
+    {
+        label: 'Pencairan Dana',
+        href: '/admin/withdrawals',
+        icon: 'receipt',
+    },
+    {
+        label: 'Konfigurasi Rekening',
+        href: '/admin/bank-settings',
+        icon: 'settings',
     },
     {
         label: 'Panduan',

@@ -50,10 +50,17 @@ class CampaignController extends Controller
             'campaign' => [
                 ...$this->present($campaign),
                 'wallet_address' => $campaign->wallet_address,
+                'payout_bank_name' => $campaign->payout_bank_name,
+                'payout_account_number' => $campaign->payout_account_number,
+                'payout_account_name' => $campaign->payout_account_name,
                 'donation_open' => $campaign->acceptsDonations(),
                 'donation_message' => $campaign->acceptsDonations() ? 'Donasi sedang dibuka.' : $campaign->donationAvailabilityMessage(),
                 'donations' => $campaign->donations->map(fn ($donation) => [
                     'id' => $donation->id,
+                    'donor_name' => $donation->donor_name ?? 'Dermawan Baik',
+                    'payment_method' => $donation->payment_method,
+                    'reference_code' => $donation->reference_code,
+                    'payment_proof_url' => $donation->payment_proof_path ? asset('storage/' . $donation->payment_proof_path) : null,
                     'transaction_hash' => $donation->transaction_hash,
                     'block_number' => $donation->block_number,
                     'status' => $donation->status,
@@ -76,7 +83,10 @@ class CampaignController extends Controller
             'target_amount' => ['required', 'integer', 'min:10000'],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
-            'wallet_address' => ['required', 'string', 'max:255'],
+            'payout_bank_name' => ['required', 'string', 'max:100'],
+            'payout_account_number' => ['required', 'string', 'max:50'],
+            'payout_account_name' => ['required', 'string', 'max:100'],
+            'wallet_address' => ['nullable', 'string', 'max:255'],
             'blockchain_campaign_id' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -90,7 +100,10 @@ class CampaignController extends Controller
             'starts_at' => $validated['starts_at'],
             'ends_at' => $validated['ends_at'],
             'image_path' => $request->file('image')?->store('campaigns', 'public'),
-            'wallet_address' => $validated['wallet_address'],
+            'payout_bank_name' => $validated['payout_bank_name'],
+            'payout_account_number' => $validated['payout_account_number'],
+            'payout_account_name' => $validated['payout_account_name'],
+            'wallet_address' => $validated['wallet_address'] ?? null,
             'blockchain_campaign_id' => $validated['blockchain_campaign_id'] ?? null,
             'status' => 'active',
         ]);
@@ -111,6 +124,9 @@ class CampaignController extends Controller
             'target_amount' => ['required', 'integer', 'min:10000'],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
+            'payout_bank_name' => ['nullable', 'string', 'max:100'],
+            'payout_account_number' => ['nullable', 'string', 'max:50'],
+            'payout_account_name' => ['nullable', 'string', 'max:100'],
         ]);
 
         $campaign->update([
@@ -120,6 +136,9 @@ class CampaignController extends Controller
             'target_amount' => $validated['target_amount'],
             'starts_at' => $validated['starts_at'],
             'ends_at' => $validated['ends_at'],
+            'payout_bank_name' => $validated['payout_bank_name'] ?? $campaign->payout_bank_name,
+            'payout_account_number' => $validated['payout_account_number'] ?? $campaign->payout_account_number,
+            'payout_account_name' => $validated['payout_account_name'] ?? $campaign->payout_account_name,
             'image_path' => $request->file('image')?->store('campaigns', 'public') ?? $campaign->image_path,
         ]);
 
@@ -152,9 +171,14 @@ class CampaignController extends Controller
             'starts_at' => $campaign->starts_at?->toIso8601String(),
             'ends_at' => $campaign->ends_at?->toIso8601String(),
             'status' => $campaign->status,
+            'payout_bank_name' => $campaign->payout_bank_name,
+            'payout_account_number' => $campaign->payout_account_number,
+            'payout_account_name' => $campaign->payout_account_name,
             'blockchain_campaign_id' => $campaign->blockchain_campaign_id,
             'withdrawal_status' => $campaign->withdrawal_status ?? 'not_ready',
+            'withdrawal_transaction_hash' => $campaign->withdrawal_transaction_hash,
             'can_withdraw' => $campaign->canWithdraw(),
+            'withdrawal_message' => $campaign->withdrawalEligibilityMessage(),
             'donation_open' => $campaign->acceptsDonations(),
             'donation_message' => $campaign->acceptsDonations() ? 'Donasi sedang dibuka.' : $campaign->donationAvailabilityMessage(),
             'organizer' => $campaign->organizer,

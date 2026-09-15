@@ -20,11 +20,6 @@ export const userNavigation = [
         icon: 'receipt',
     },
     {
-        label: 'Wallet ',
-        href: '/dashboard#wallet',
-        icon: 'wallet',
-    },
-    {
         label: 'Panduan',
         href: '/panduan',
         icon: 'guide',

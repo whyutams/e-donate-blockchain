@@ -24,9 +24,15 @@ class Campaign extends Model
         'ends_at',
         'status',
         'wallet_address',
+        'payout_bank_name',
+        'payout_account_number',
+        'payout_account_name',
         'blockchain_campaign_id',
         'withdrawal_transaction_hash',
+        'withdrawal_amount',
         'withdrawal_status',
+        'withdrawal_proof_path',
+        'withdrawal_notes',
         'withdrawn_at',
     ];
 
@@ -34,6 +40,7 @@ class Campaign extends Model
     {
         return [
             'target_amount' => 'integer',
+            'withdrawal_amount' => 'integer',
             'progress_percentage' => 'decimal:2',
             'donors_count' => 'integer',
             'starts_at' => 'datetime',
@@ -86,7 +93,32 @@ class Campaign extends Model
         $at ??= now();
 
         return in_array($this->status, ['active', 'goal_reached', 'expired'], true)
-            && $this->withdrawal_status === 'not_ready'
+            && in_array($this->withdrawal_status, ['not_ready', null], true)
             && ((float) $this->progress_percentage >= 100 || ($this->ends_at && $at->isAfter($this->ends_at)));
+    }
+
+    public function withdrawalEligibilityMessage(?Carbon $at = null): string
+    {
+        $at ??= now();
+
+        if ($this->withdrawal_status === 'pending') {
+            return 'Permintaan pencairan dana sedang ditinjau oleh Admin.';
+        }
+
+        if ($this->withdrawal_status === 'confirmed') {
+            return 'Dana donasi kampanye ini telah berhasil dicairkan.';
+        }
+
+        if ((float) $this->progress_percentage >= 100) {
+            return 'Target donasi telah tercapai (100%). Kampanye memenuhi syarat untuk dicairkan.';
+        }
+
+        if ($this->ends_at && $at->isAfter($this->ends_at)) {
+            return 'Periode kampanye telah melewati batas jatuh tempo. Kampanye memenuhi syarat untuk dicairkan.';
+        }
+
+        $sisaWaktu = $this->ends_at ? $this->ends_at->diffForHumans($at, ['parts' => 2]) : 'belum ditentukan';
+
+        return "Pencairan dana hanya dapat diajukan jika target terpenuhi (saat ini {$this->progress_percentage}%) atau setelah melewati jatuh tempo (sisa waktu {$sisaWaktu}).";
     }
 }

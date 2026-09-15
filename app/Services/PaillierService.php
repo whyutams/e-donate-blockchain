@@ -97,7 +97,7 @@ class PaillierService
         $q = BigInteger::randomPrime($halfBits);
         $n = $p->multiply($q);
         $lambda = $this->lcm($p->subtract(new BigInteger(1)), $q->subtract(new BigInteger(1)));
-        $mu = $this->lFunction((new BigInteger(1)->add($n))->powMod($lambda, $n->multiply($n)), $n)->modInverse($n);
+        $mu = $this->lFunction($n->add(new BigInteger(1))->powMod($lambda, $n->multiply($n)), $n)->modInverse($n);
 
         if ($mu === false) {
             throw new InvalidArgumentException('Unable to create Paillier inverse.');

@@ -12,6 +12,9 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.ts'])
         @inertiaHead
+
+        <!-- Midtrans Snap JS -->
+        <script type="text/javascript" src="{{ app(\App\Services\MidtransService::class)->getSnapJsUrl() }}" data-client-key="{{ app(\App\Services\MidtransService::class)->getClientKey() }}"></script>
     </head>
     <body class="font-sans antialiased bg-[#f3f6ef] text-slate-900 selection:bg-emerald-500 selection:text-white min-h-screen">
         @inertia

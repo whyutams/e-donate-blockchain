@@ -26,7 +26,11 @@ Route::middleware(['throttle:donations'])->prefix('api')->group(function () {
             'timestamp' => now()->toIso8601String(),
         ]);
     });
+
+    Route::post('/midtrans/notification', [\App\Http\Controllers\MidtransController::class, 'handleNotification'])->name('midtrans.notification');
 });
+
+Route::post('/midtrans/notification', [\App\Http\Controllers\MidtransController::class, 'handleNotification']);
 
 require __DIR__.'/auth.php';
 require __DIR__.'/app.php';
