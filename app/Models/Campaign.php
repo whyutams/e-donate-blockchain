@@ -74,6 +74,9 @@ class Campaign extends Model
         $at ??= now();
 
         if ($this->status !== 'active') {
+            if ($this->status === 'withdrawn') {
+                return 'Kampanye sudah selesai.';
+            }
             return 'Kampanye tidak berstatus aktif.';
         }
 
