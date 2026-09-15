@@ -6,15 +6,7 @@ use Inertia\Inertia;
 
 Route::middleware(['throttle:global'])->group(function () {
     Route::get('/', function () {
-        return Inertia::render('Welcome', [
-            'laravelVersion' => Application::VERSION,
-            'phpVersion' => PHP_VERSION,
-            'dbName' => config('database.connections.mysql.database'),
-            'extensions' => [
-                'bcmath' => extension_loaded('bcmath'),
-                'gmp' => extension_loaded('gmp'),
-            ],
-        ]);
+        return redirect()->route('login');
     });
 });
 
