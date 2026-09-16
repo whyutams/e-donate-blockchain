@@ -78,7 +78,7 @@ class CampaignController extends Controller
                 'donations' => $campaign->donations->map(fn ($donation) => [
                     'id' => $donation->id,
                     'is_anonymous' => (bool) $donation->is_anonymous,
-                    'donor_name' => $donation->is_anonymous ? 'Hamba Allah' : ($donation->donor_name ?? 'Dermawan Baik'),
+                    'donor_name' => $donation->is_anonymous ? 'Anonim (Terenkripsi)' : ($donation->donor_name ?? 'Dermawan Baik'),
                     'encrypted_donor_name' => $donation->encrypted_donor_name,
                     'donor_name_commitment' => $donation->encrypted_donor_name ? $paillier->commitment($donation->encrypted_donor_name) : null,
                     'payment_method' => $donation->payment_method,
