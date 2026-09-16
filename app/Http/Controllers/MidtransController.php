@@ -61,11 +61,11 @@ class MidtransController extends Controller
         $isAnonymous = $request->boolean('is_anonymous');
         $rawDonorName = ! empty($validated['donor_name']) ? $validated['donor_name'] : ($request->user()?->name ?? 'Donatur Anonim');
         $encryptedDonorName = null;
-        $displayDonorName = $rawDonorName;
+        $donorName = $rawDonorName;
 
         if ($isAnonymous) {
             $encryptedDonorName = app(PaillierService::class)->encryptString($rawDonorName);
-            $displayDonorName = $encryptedDonorName;
+            $donorName = null;
         }
 
         // Transaction Hash Kriptografis Blockchain
@@ -82,7 +82,7 @@ class MidtransController extends Controller
             'campaign_id' => $campaign->id,
             'donor_id' => $request->user()?->id,
             'is_anonymous' => $isAnonymous,
-            'donor_name' => $displayDonorName,
+            'donor_name' => $donorName,
             'encrypted_donor_name' => $encryptedDonorName,
             'payment_method' => 'midtrans',
             'reference_code' => $referenceCode,
@@ -96,7 +96,7 @@ class MidtransController extends Controller
 
         try {
             $customer = [
-                'name' => $displayDonorName,
+                'name' => $isAnonymous ? 'Donatur' : $rawDonorName,
                 'email' => $request->user()?->email ?? 'donor@example.com',
             ];
 
