@@ -98,7 +98,7 @@ const scrollToSection = (id: string) => {
         <Head title="SafeGive - Platform Donasi Berbasis Blockchain" />
 
         <!-- NAVBAR -->
-        <header class="sticky top-0 z-40 border-b border-[#dce6d8] bg-white/95 backdrop-blur-md">
+        <header class="sticky top-0 z-40 border-b border-[#dce6d8] bg-white/95 backdrop-blur-md py-2">
             <div class="mx-auto flex h-18 max-w-6xl items-center justify-between px-4 sm:px-8">
                 <!-- Brand Logo & Navlink (Placed next to brand) -->
                 <div class="flex items-center gap-6 sm:gap-8">
@@ -113,7 +113,7 @@ const scrollToSection = (id: string) => {
                     </Link>
 
                     <!-- Navigation Link -->
-                    <nav class="flex items-center">
+                    <!-- <nav class="flex items-center">
                         <button
                             type="button"
                             @click="scrollToSection('kampanye')"
@@ -121,7 +121,7 @@ const scrollToSection = (id: string) => {
                         >
                             Kampanye
                         </button>
-                    </nav>
+                    </nav> -->
                 </div>
 
                 <!-- Auth Action Buttons -->
