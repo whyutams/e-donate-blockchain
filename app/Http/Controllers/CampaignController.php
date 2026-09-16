@@ -62,7 +62,7 @@ class CampaignController extends Controller
             && $isWithinSchedule
             && $remainingAmount > 0;
 
-        return Inertia::render('Campaigns/Show', [
+        $data = [
             'campaign' => [
                 ...$this->present($campaign),
                 'wallet_address' => $campaign->wallet_address,
@@ -91,7 +91,13 @@ class CampaignController extends Controller
                     'created_at' => $donation->created_at?->toIso8601String(),
                 ])->values(),
             ],
-        ]);
+        ];
+
+        if (! auth()->check()) {
+            return Inertia::render('Campaigns/PublicShow', $data);
+        }
+
+        return Inertia::render('Campaigns/Show', $data);
     }
 
     private function collectedAmount(Campaign $campaign, PaillierService $paillier): int

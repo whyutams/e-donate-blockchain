@@ -117,14 +117,16 @@ class DonationEncryptionTest extends TestCase
             'status' => 'active',
         ]);
 
-        // Unauthenticated access must succeed (200 OK)
+        // Unauthenticated access must render Campaigns/PublicShow (200 OK)
         $response = $this->get("/campaigns/{$campaign->id}");
         $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page->component('Campaigns/PublicShow'));
 
-        // Authenticated access also succeeds (200 OK)
+        // Authenticated access must render Campaigns/Show (200 OK)
         $user = User::factory()->create();
         $authResponse = $this->actingAs($user)->get("/campaigns/{$campaign->id}");
         $authResponse->assertStatus(200);
+        $authResponse->assertInertia(fn ($page) => $page->component('Campaigns/Show'));
     }
 
     public function test_making_donation_requires_authentication(): void

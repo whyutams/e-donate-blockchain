@@ -331,7 +331,7 @@ const scrollToSection = (id: string) => {
                                 :href="`/campaigns/${campaign.id}`"
                                 class="inline-flex items-center justify-center gap-1 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-800 active:scale-95 text-center"
                             >
-                                <span>Donasi Sekarang</span>
+                                <span>Detail Kampanye</span>
                                 <IconArrowRight class="h-3.5 w-3.5" />
                             </Link>
                         </div>
