@@ -787,7 +787,7 @@ const isWithdrawn = computed(() => {
                                     <template v-if="donation.is_anonymous">
                                         <span class="inline-flex items-center gap-1 font-bold text-emerald-900 text-xs bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-lg">
                                             <IconLock class="h-3 w-3 text-emerald-700" />
-                                            <span>Hamba Allah (Terenkripsi Paillier)</span>
+                                            <span>Anonim (Terenkripsi Paillier)</span>
                                         </span>
                                     </template>
                                     <template v-else>
@@ -1157,7 +1157,7 @@ const isWithdrawn = computed(() => {
                                             <IconShieldCheck class="h-3.5 w-3.5 text-emerald-700" />
                                             <span>Enkripsi Paillier 1024-bit Aktif</span>
                                         </div>
-                                        Nama donatur asli yang Anda masukkan dienkripsi secara asimetris menggunakan Paillier cryptosystem. Di daftar publik, identitas Anda ditampilkan sebagai <strong>Hamba Allah</strong> dengan bukti komitmen SHA-256 terenkripsi.
+                                        Nama donatur yang Anda masukkan dienkripsi secara asimetris menggunakan Paillier cryptosystem.
                                     </div>
                                 </div>
 

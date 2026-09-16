@@ -25,7 +25,7 @@ class PaillierServiceTest extends TestCase
         $names = [
             'Budi Santoso',
             'Siti Nurhaliza 123',
-            'Hamba Allah Berkah',
+            'Donatur Rahasia Berkah',
             'Dr. Ir. Raden Mas Arya, S.Kom., M.T.',
         ];
 

@@ -390,7 +390,7 @@ const getPlatformInfo = (url: string | null | undefined) => {
                                     <div>
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-slate-900 text-sm">
-                                                {{ donation.is_anonymous ? 'Hamba Allah' : donation.donor_name }}
+                                                {{ donation.is_anonymous ? 'Anonim' : donation.donor_name }}
                                             </span>
                                             <span
                                                 v-if="donation.is_anonymous"
