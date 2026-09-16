@@ -30,7 +30,10 @@ import {
 
 interface Donation {
     id: number;
+    is_anonymous?: boolean;
     donor_name: string;
+    encrypted_donor_name?: string | null;
+    donor_name_commitment?: string | null;
     payment_method: string;
     reference_code: string | null;
     payment_proof_url: string | null;
@@ -144,6 +147,15 @@ const copyAdminAccount = () => {
     copiedBank.value = true;
     setTimeout(() => {
         copiedBank.value = false;
+    }, 2000);
+};
+
+const copiedCampaignLink = ref(false);
+const copyCampaignLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    copiedCampaignLink.value = true;
+    setTimeout(() => {
+        copiedCampaignLink.value = false;
     }, 2000);
 };
 
@@ -398,10 +410,22 @@ const isWithdrawn = computed(() => {
         <Head :title="`${campaign.title} - SafeGive`" />
 
         <div class="space-y-7">
-            <Link href="/campaigns" class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-emerald-700">
-                <IconArrowLeft class="h-4 w-4" />
-                Kembali ke daftar kampanye
-            </Link>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <Link href="/campaigns" class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-emerald-700">
+                    <IconArrowLeft class="h-4 w-4" />
+                    Kembali ke daftar kampanye
+                </Link>
+
+                <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-xl border border-[#dce6d8] bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs transition hover:border-emerald-300 hover:bg-[#edf4e9] hover:text-emerald-800 active:scale-95"
+                    @click="copyCampaignLink"
+                >
+                    <IconCheck v-if="copiedCampaignLink" class="h-3.5 w-3.5 text-emerald-600" />
+                    <IconCopy v-else class="h-3.5 w-3.5 text-slate-500" />
+                    <span>{{ copiedCampaignLink ? 'Link Kampanye Tersalin!' : 'Salin Link Kampanye' }}</span>
+                </button>
+            </div>
 
             <!-- Flash Message -->
             <div
@@ -648,18 +672,6 @@ const isWithdrawn = computed(() => {
                                             <IconCheck v-if="copiedVideoUrl" class="h-3.5 w-3.5 text-emerald-600" />
                                             <IconCopy v-else class="h-3.5 w-3.5 text-slate-500" />
                                         </button>
-
-                                        <!-- Edit Link Button (Organizers only if withdrawn) -->
-                                        <button
-                                            v-if="isOrganizer && isWithdrawn"
-                                            type="button"
-                                            class="inline-flex items-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition"
-                                            @click="openVideoModal"
-                                            title="Edit Tautan Video"
-                                        >
-                                            <IconPencil class="h-3.5 w-3.5" />
-                                            <span>Edit Link</span>
-                                        </button>
                                     </div>
                                 </div>
 
@@ -768,7 +780,15 @@ const isWithdrawn = computed(() => {
                         >
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-bold text-slate-900 text-xs">{{ donation.donor_name }}</span>
+                                    <template v-if="donation.is_anonymous">
+                                        <span class="inline-flex items-center gap-1 font-bold text-emerald-900 text-xs bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-lg">
+                                            <IconLock class="h-3 w-3 text-emerald-700" />
+                                            <span>Hamba Allah (Terenkripsi Paillier)</span>
+                                        </span>
+                                    </template>
+                                    <template v-else>
+                                        <span class="font-bold text-slate-900 text-xs">{{ donation.donor_name }}</span>
+                                    </template>
                                     <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-600">
                                         {{ donation.payment_method }}
                                     </span>
@@ -905,20 +925,27 @@ const isWithdrawn = computed(() => {
                                 </label>
                                 <input
                                     v-model="form.donor_name"
-                                    :disabled="form.is_anonymous"
                                     type="text"
-                                    class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-emerald-500 disabled:bg-slate-100"
+                                    class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-emerald-500"
                                     placeholder="Nama lengkap Anda..."
                                 />
-                                <div class="mt-1.5 flex items-center gap-2">
+                                <div class="mt-1.5 flex items-start gap-2">
                                     <input
                                         id="anon-midtrans"
                                         type="checkbox"
                                         v-model="form.is_anonymous"
-                                        class="rounded text-emerald-600 focus:ring-emerald-500"
-                                        @change="form.donor_name = form.is_anonymous ? 'Hamba Allah' : (page.props.auth.user?.name || '')"
+                                        class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
                                     />
-                                    <label for="anon-midtrans" class="text-xs text-slate-600">Sembunyikan nama (Hamba Allah)</label>
+                                    <label for="anon-midtrans" class="text-xs font-medium text-slate-700 cursor-pointer">
+                                        Sembunyikan nama (Enkripsi Identitas dengan Kriptografi Paillier)
+                                    </label>
+                                </div>
+                                <div v-if="form.is_anonymous" class="mt-2 rounded-xl bg-emerald-50/90 border border-emerald-200/80 p-2.5 text-[11px] text-emerald-900 leading-relaxed shadow-2xs">
+                                    <div class="flex items-center gap-1 font-bold text-emerald-800 mb-0.5">
+                                        <IconShieldCheck class="h-3.5 w-3.5 text-emerald-700" />
+                                        <span>Enkripsi Paillier 1024-bit Aktif</span>
+                                    </div>
+                                    Nama Anda akan dienkripsi secara asimetris dengan public key Paillier. Pada ledger blockchain publik, nama Anda disamarkan sebagai <strong>Hamba Allah (Terenkripsi)</strong> dengan SHA-256 commitment hash.
                                 </div>
                             </div>
 
@@ -1077,20 +1104,27 @@ const isWithdrawn = computed(() => {
                                     </label>
                                     <input
                                         v-model="form.donor_name"
-                                        :disabled="form.is_anonymous"
                                         type="text"
-                                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-emerald-500 disabled:bg-slate-100"
+                                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-emerald-500"
                                         placeholder="Nama lengkap Anda..."
                                     />
-                                    <div class="mt-1.5 flex items-center gap-2">
+                                    <div class="mt-1.5 flex items-start gap-2">
                                         <input
                                             id="anon"
                                             type="checkbox"
                                             v-model="form.is_anonymous"
-                                            class="rounded text-emerald-600 focus:ring-emerald-500"
-                                            @change="form.donor_name = form.is_anonymous ? 'Hamba Allah' : (page.props.auth.user?.name || '')"
+                                            class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
                                         />
-                                        <label for="anon" class="text-xs text-slate-600">Sembunyikan nama (Donasi sebagai Hamba Allah)</label>
+                                        <label for="anon" class="text-xs font-medium text-slate-700 cursor-pointer">
+                                            Sembunyikan nama (Enkripsi Identitas dengan Kriptografi Paillier)
+                                        </label>
+                                    </div>
+                                    <div v-if="form.is_anonymous" class="mt-2 rounded-xl bg-emerald-50/90 border border-emerald-200/80 p-2.5 text-[11px] text-emerald-900 leading-relaxed shadow-2xs">
+                                        <div class="flex items-center gap-1 font-bold text-emerald-800 mb-0.5">
+                                            <IconShieldCheck class="h-3.5 w-3.5 text-emerald-700" />
+                                            <span>Enkripsi Paillier 1024-bit Aktif</span>
+                                        </div>
+                                        Nama Anda akan dienkripsi secara asimetris dengan public key Paillier. Pada ledger blockchain publik, nama Anda disamarkan sebagai <strong>Hamba Allah (Terenkripsi)</strong> dengan SHA-256 commitment hash.
                                     </div>
                                 </div>
 
