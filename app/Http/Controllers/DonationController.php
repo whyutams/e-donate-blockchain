@@ -30,6 +30,7 @@ class DonationController extends Controller
             'amount' => ['required', 'integer', 'min:1', 'max:1000000000'],
             'payment_method' => ['required', 'string', 'max:50'],
             'donor_name' => ['nullable', 'string', 'max:100'],
+            'is_anonymous' => ['nullable', 'boolean'],
             'donor_email' => ['nullable', 'email', 'max:100'],
             'donor_phone' => ['nullable', 'string', 'max:30'],
             'donor_note' => ['nullable', 'string', 'max:500'],
@@ -51,6 +52,17 @@ class DonationController extends Controller
         $encryptedAmount = $encryptor->encrypt($amount);
         $commitment = app(PaillierService::class)->commitment($encryptedAmount);
 
+        // Enkripsi nama donatur jika memilih sembunyikan nama (Paillier Cryptosystem)
+        $isAnonymous = $request->boolean('is_anonymous');
+        $rawDonorName = ! empty($validated['donor_name']) ? $validated['donor_name'] : ($request->user()?->name ?? 'Anonim');
+        $encryptedDonorName = null;
+        $displayDonorName = $rawDonorName;
+
+        if ($isAnonymous) {
+            $encryptedDonorName = app(PaillierService::class)->encryptString($rawDonorName);
+            $displayDonorName = 'Hamba Allah';
+        }
+
         // Generate Transaction Hash Kriptografis Blockchain (Format 0x + 64 hex SHA-256)
         $txHash = '0x' . hash('sha256', "donation:{$campaign->id}:" . Str::random(16) . ":{$encryptedAmount}:" . microtime(true));
 
@@ -69,7 +81,9 @@ class DonationController extends Controller
         Donation::create([
             'campaign_id' => $campaign->id,
             'donor_id' => $request->user()?->id,
-            'donor_name' => $validated['donor_name'] ?? $request->user()?->name ?? 'Anonim',
+            'is_anonymous' => $isAnonymous,
+            'donor_name' => $displayDonorName,
+            'encrypted_donor_name' => $encryptedDonorName,
             'donor_email' => $validated['donor_email'] ?? $request->user()?->email,
             'donor_phone' => $validated['donor_phone'] ?? null,
             'payment_method' => $validated['payment_method'],
@@ -110,7 +124,9 @@ class DonationController extends Controller
                     'id' => $donation->id,
                     'campaign_id' => $donation->campaign_id,
                     'campaign' => $donation->campaign?->title ?? 'Kampanye dihapus',
-                    'donor_name' => $donation->donor_name,
+                    'is_anonymous' => (bool) $donation->is_anonymous,
+                    'encrypted_donor_name' => $donation->encrypted_donor_name,
+                    'donor_name' => $donation->is_anonymous ? 'Hamba Allah (Terenkripsi Paillier)' : ($donation->donor_name ?? 'Anonim'),
                     'payment_method' => $donation->payment_method,
                     'reference_code' => $donation->reference_code,
                     'payment_proof_url' => $donation->payment_proof_path ? asset('storage/' . $donation->payment_proof_path) : null,
