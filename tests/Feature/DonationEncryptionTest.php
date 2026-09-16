@@ -48,8 +48,8 @@ class DonationEncryptionTest extends TestCase
 
         $this->assertNotNull($donation);
         $this->assertTrue($donation->is_anonymous);
-        $this->assertSame('Anonim (Terenkripsi)', $donation->donor_name);
         $this->assertNotNull($donation->encrypted_donor_name);
+        $this->assertSame($donation->encrypted_donor_name, $donation->donor_name);
 
         // Verify that Paillier decryptString correctly recovers the original donor name
         $paillier = app(PaillierService::class);
@@ -193,8 +193,8 @@ class DonationEncryptionTest extends TestCase
 
         $this->assertNotNull($donation);
         $this->assertTrue($donation->is_anonymous);
-        $this->assertSame('Anonim (Terenkripsi)', $donation->donor_name);
         $this->assertNotNull($donation->encrypted_donor_name);
+        $this->assertSame($donation->encrypted_donor_name, $donation->donor_name);
 
         $paillier = app(PaillierService::class);
         $decryptedName = $paillier->decryptString($donation->encrypted_donor_name);

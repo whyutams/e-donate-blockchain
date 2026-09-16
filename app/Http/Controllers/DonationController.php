@@ -58,7 +58,7 @@ class DonationController extends Controller
 
         if ($isAnonymous) {
             $encryptedDonorName = app(PaillierService::class)->encryptString($rawDonorName);
-            $displayDonorName = 'Anonim (Terenkripsi)';
+            $displayDonorName = $encryptedDonorName;
         }
 
         // Generate Transaction Hash Kriptografis Blockchain (Format 0x + 64 hex SHA-256)
@@ -122,7 +122,7 @@ class DonationController extends Controller
                     'campaign' => $donation->campaign?->title ?? 'Kampanye dihapus',
                     'is_anonymous' => (bool) $donation->is_anonymous,
                     'encrypted_donor_name' => $donation->encrypted_donor_name,
-                    'donor_name' => $donation->is_anonymous ? 'Anonim (Terenkripsi)' : ($donation->donor_name ?? 'Anonim'),
+                    'donor_name' => $donation->is_anonymous ? ($donation->encrypted_donor_name ?? $donation->donor_name) : ($donation->donor_name ?? 'Anonim'),
                     'payment_method' => $donation->payment_method,
                     'reference_code' => $donation->reference_code,
                     'payment_proof_url' => $donation->payment_proof_path ? asset('storage/' . $donation->payment_proof_path) : null,

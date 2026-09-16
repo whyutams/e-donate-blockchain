@@ -65,7 +65,7 @@ class MidtransController extends Controller
 
         if ($isAnonymous) {
             $encryptedDonorName = app(PaillierService::class)->encryptString($rawDonorName);
-            $displayDonorName = 'Anonim (Terenkripsi)';
+            $displayDonorName = $encryptedDonorName;
         }
 
         // Transaction Hash Kriptografis Blockchain
