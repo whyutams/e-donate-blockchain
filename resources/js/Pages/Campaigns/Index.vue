@@ -28,16 +28,17 @@ defineProps<{
 }>();
 
 const copiedCampaignId = ref<number | null>(null);
-const copyCampaignLink = (campaignId: number, e?: Event) => {
+const copyCampaignLink = (campaign: Campaign, e?: Event) => {
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    const url = `${window.location.origin}/campaigns/${campaignId}`;
+    const identifier = campaign.slug || campaign.id;
+    const url = `${window.location.origin}/campaigns/${identifier}`;
     navigator.clipboard.writeText(url);
-    copiedCampaignId.value = campaignId;
+    copiedCampaignId.value = campaign.id;
     setTimeout(() => {
-        if (copiedCampaignId.value === campaignId) {
+        if (copiedCampaignId.value === campaign.id) {
             copiedCampaignId.value = null;
         }
     }, 2000);
@@ -111,14 +112,14 @@ const formatDate = (value: string | null): string => value
                             <button
                                 type="button"
                                 class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#dce6d8] bg-white px-3 py-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-emerald-300 hover:bg-[#edf4e9] hover:text-emerald-800 active:scale-95"
-                                @click="copyCampaignLink(campaign.id, $event)"
+                                @click="copyCampaignLink(campaign, $event)"
                             >
                                 <IconCheck v-if="copiedCampaignId === campaign.id" class="h-3.5 w-3.5 text-emerald-600" />
                                 <IconCopy v-else class="h-3.5 w-3.5 text-slate-500" />
                                 <span>{{ copiedCampaignId === campaign.id ? 'Tersalin!' : 'Salin Link' }}</span>
                             </button>
 
-                            <Link :href="`/campaigns/${campaign.id}`" class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-800 text-center">
+                            <Link :href="`/campaigns/${campaign.slug || campaign.id}`" class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-800 text-center">
                                 Detail & Donasi
                             </Link>
                         </div>

@@ -15,9 +15,8 @@ use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
-// Publicly viewable campaign list and detail routes
+// Public campaign list
 Route::get('/campaigns', [CampaignController::class, 'index'])->name('campaigns.index');
-Route::get('/campaigns/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');
 
 Route::middleware('auth')->group(function () {
 	Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -57,3 +56,6 @@ Route::middleware('auth')->group(function () {
 		Route::post('/withdrawals/{campaign}/reject', [AdminWithdrawalController::class, 'reject'])->name('withdrawals.reject');
 	});
 });
+
+// Publicly viewable campaign detail route (must be defined AFTER /campaigns/create)
+Route::get('/campaigns/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');

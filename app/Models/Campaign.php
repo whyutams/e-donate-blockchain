@@ -50,6 +50,17 @@ class Campaign extends Model
         ];
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        return $query->where($field ?? 'slug', $value)
+            ->orWhere('id', is_numeric($value) ? (int) $value : 0);
+    }
+
     public function organizer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'organizer_id');

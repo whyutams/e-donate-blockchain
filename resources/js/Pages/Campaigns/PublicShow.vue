@@ -42,6 +42,7 @@ interface Donation {
 interface Campaign {
     id: number;
     title: string;
+    slug: string;
     description: string;
     category: string;
     image_url: string | null;
@@ -69,7 +70,9 @@ const user = computed(() => page.props.auth?.user);
 
 const copiedCampaignLink = ref(false);
 const copyCampaignLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const identifier = props.campaign.slug || props.campaign.id;
+    const url = `${window.location.origin}/campaigns/${identifier}`;
+    navigator.clipboard.writeText(url);
     copiedCampaignLink.value = true;
     setTimeout(() => {
         copiedCampaignLink.value = false;

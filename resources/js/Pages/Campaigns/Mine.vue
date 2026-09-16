@@ -18,6 +18,7 @@ import {
 interface Campaign {
     id: number;
     title: string;
+    slug: string;
     description: string;
     category: string;
     image_url: string | null;
@@ -39,16 +40,17 @@ const props = defineProps<{ campaigns: Campaign[]; canCreate: boolean }>();
 const page = usePage();
 
 const copiedCampaignId = ref<number | null>(null);
-const copyCampaignLink = (campaignId: number, e?: Event) => {
+const copyCampaignLink = (campaign: Campaign, e?: Event) => {
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    const url = `${window.location.origin}/campaigns/${campaignId}`;
+    const identifier = campaign.slug || campaign.id;
+    const url = `${window.location.origin}/campaigns/${identifier}`;
     navigator.clipboard.writeText(url);
-    copiedCampaignId.value = campaignId;
+    copiedCampaignId.value = campaign.id;
     setTimeout(() => {
-        if (copiedCampaignId.value === campaignId) {
+        if (copiedCampaignId.value === campaign.id) {
             copiedCampaignId.value = null;
         }
     }, 2000);
@@ -219,7 +221,7 @@ const submitWithdrawal = () => {
                                 type="button"
                                 class="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
                                 title="Salin link kampanye"
-                                @click="copyCampaignLink(campaign.id, $event)"
+                                @click="copyCampaignLink(campaign, $event)"
                             >
                                 <IconCheck v-if="copiedCampaignId === campaign.id" class="h-3.5 w-3.5 text-emerald-600" />
                                 <IconCopy v-else class="h-3.5 w-3.5 text-slate-500" />
@@ -227,7 +229,7 @@ const submitWithdrawal = () => {
                             </button>
 
                             <Link
-                                :href="`/campaigns/${campaign.id}`"
+                                :href="`/campaigns/${campaign.slug || campaign.id}`"
                                 class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
                             >
                                 <IconEye class="h-4 w-4" />

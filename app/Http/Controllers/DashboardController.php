@@ -27,6 +27,7 @@ class DashboardController extends Controller
             ->get()
             ->map(fn (Campaign $campaign) => [
                 'id' => $campaign->id,
+                'slug' => $campaign->slug,
                 'title' => $campaign->title,
                 'category' => $campaign->category,
                 'target' => (int) $campaign->target_amount,
@@ -90,6 +91,7 @@ class DashboardController extends Controller
                     ->get()
                     ->map(fn (Campaign $campaign) => [
                         'id' => $campaign->id,
+                        'slug' => $campaign->slug,
                         'title' => $campaign->title,
                         'organizer' => $campaign->organizer?->name ?? 'Penyelenggara',
                         'status' => $campaign->status,
