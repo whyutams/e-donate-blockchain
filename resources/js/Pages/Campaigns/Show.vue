@@ -104,8 +104,6 @@ const form = useForm({
     payment_method: 'BCA',
     donor_name: page.props.auth.user?.name || '',
     is_anonymous: false,
-    donor_email: page.props.auth.user?.email || '',
-    donor_phone: '',
     donor_note: '',
     payment_proof: null as File | null,
 });
@@ -239,8 +237,6 @@ const payWithMidtrans = async () => {
                 amount: parseInt(form.amount, 10),
                 donor_name: form.donor_name,
                 is_anonymous: form.is_anonymous,
-                donor_email: form.donor_email,
-                donor_phone: form.donor_phone,
                 donor_note: form.donor_note,
             }),
         });
@@ -982,31 +978,7 @@ const isWithdrawn = computed(() => {
                                 </div>
                             </div>
 
-                            <!-- Contact details for Midtrans -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                                        Email (Kirim Resi)
-                                    </label>
-                                    <input
-                                        v-model="form.donor_email"
-                                        type="email"
-                                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-emerald-500"
-                                        placeholder="email@example.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                                        No. WhatsApp / HP
-                                    </label>
-                                    <input
-                                        v-model="form.donor_phone"
-                                        type="text"
-                                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-emerald-500"
-                                        placeholder="081234567890"
-                                    />
-                                </div>
-                            </div>
+
 
                             <!-- Donor Note -->
                             <div>

@@ -31,8 +31,6 @@ class DonationController extends Controller
             'payment_method' => ['required', 'string', 'max:50'],
             'donor_name' => ['nullable', 'string', 'max:100'],
             'is_anonymous' => ['nullable', 'boolean'],
-            'donor_email' => ['nullable', 'email', 'max:100'],
-            'donor_phone' => ['nullable', 'string', 'max:30'],
             'donor_note' => ['nullable', 'string', 'max:500'],
             'payment_proof' => ['nullable', 'image', 'max:5120'],
         ]);
@@ -84,8 +82,6 @@ class DonationController extends Controller
             'is_anonymous' => $isAnonymous,
             'donor_name' => $displayDonorName,
             'encrypted_donor_name' => $encryptedDonorName,
-            'donor_email' => $validated['donor_email'] ?? $request->user()?->email,
-            'donor_phone' => $validated['donor_phone'] ?? null,
             'payment_method' => $validated['payment_method'],
             'reference_code' => $referenceCode,
             'payment_proof_path' => $proofPath,
