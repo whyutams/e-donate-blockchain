@@ -6,15 +6,7 @@ use Inertia\Inertia;
 
 Route::middleware(['throttle:global'])->group(function () {
     Route::get('/', function () {
-        return Inertia::render('Welcome', [
-            'laravelVersion' => Application::VERSION,
-            'phpVersion' => PHP_VERSION,
-            'dbName' => config('database.connections.mysql.database'),
-            'extensions' => [
-                'bcmath' => extension_loaded('bcmath'),
-                'gmp' => extension_loaded('gmp'),
-            ],
-        ]);
+        return redirect()->route('login');
     });
 });
 
@@ -26,7 +18,11 @@ Route::middleware(['throttle:donations'])->prefix('api')->group(function () {
             'timestamp' => now()->toIso8601String(),
         ]);
     });
+
+    Route::post('/midtrans/notification', [\App\Http\Controllers\MidtransController::class, 'handleNotification'])->name('midtrans.notification');
 });
+
+Route::post('/midtrans/notification', [\App\Http\Controllers\MidtransController::class, 'handleNotification']);
 
 require __DIR__.'/auth.php';
 require __DIR__.'/app.php';

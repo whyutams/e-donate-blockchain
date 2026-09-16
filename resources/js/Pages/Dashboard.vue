@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '../Layouts/AppLayout.vue';
 import {
     IconShieldCheck,
     IconHeartHandshake,
-    IconWallet,
     IconReceipt,
-    IconUsers,
-    IconTrendingUp,
     IconSearch,
     IconCopy,
     IconCheck,
@@ -16,8 +13,7 @@ import {
     IconFlame,
     IconCoins,
     IconClock,
-    IconLock,
-    IconArrowUpRight,
+    IconArrowUpRight, 
     IconX,
     IconSparkles,
 } from '@tabler/icons-vue';
@@ -27,20 +23,30 @@ interface User {
     email: string;
 }
 
+interface AdminBank {
+    bank_name: string;
+    bank_code: string;
+    account_number: string;
+    account_name: string;
+    qris_image_path: string | null;
+    instructions: string | null;
+}
+
 interface Transaction {
     id: string;
     hash: string;
     campaign: string;
     category: string;
     amount: number;
-    amountEth: string;
+    paymentMethod: string;
+    referenceCode: string;
     date: string;
     blockNumber: number;
     status: 'verified' | 'pending';
 }
 
 interface Campaign {
-    id: string;
+    id: string | number;
     title: string;
     category: string;
     target: number;
@@ -50,8 +56,22 @@ interface Campaign {
     urgency: 'high' | 'medium';
 }
 
-const page = usePage<{ auth: { user: User | null } }>();
+const page = usePage<{
+    auth: { user: User | null };
+    admin_bank: AdminBank;
+    campaigns: Campaign[];
+    transactions: Transaction[];
+}>();
+
 const user = computed(() => page.props.auth.user);
+const adminBank = computed(() => page.props.admin_bank || {
+    bank_name: 'Bank Central Asia (BCA)',
+    bank_code: 'BCA',
+    account_number: '8830192841',
+    account_name: 'Yayasan SafeGive Kebaikan Indonesia',
+    qris_image_path: null,
+    instructions: 'Mohon transfer sesuai nominal yang dipilih. Cantumkan kode referensi donasi pada berita transfer.',
+});
 
 // Interactive State
 const activeFilter = ref<'all' | 'verified' | 'pending'>('all');
@@ -60,111 +80,32 @@ const copiedItem = ref<string | null>(null);
 const isDonateModalOpen = ref(false);
 
 // Modal state
-const selectedCampaignId = ref('camp-1');
+const selectedCampaignId = ref(String(page.props.campaigns?.[0]?.id ?? ''));
 const selectedAmount = ref<number>(100000);
 const customAmount = ref<string>('');
+const selectedMethod = ref('BCA');
+const donorName = ref(user.value?.name || '');
 const donorNote = ref('');
 const isSubmittingTx = ref(false);
 const txSuccessMessage = ref(false);
 
-const campaigns = ref<Campaign[]>([
-    {
-        id: 'camp-1',
-        title: 'Bantuan Medis Darurat Korban Gempa & Bencana',
-        category: 'Kemanusiaan',
-        target: 150000000,
-        collected: 118450000,
-        donorsCount: 428,
-        daysLeft: 5,
-        urgency: 'high',
-    },
-    {
-        id: 'camp-2',
-        title: 'Beasiswa Pendidikan & Laptop Siswa Berprestasi',
-        category: 'Pendidikan',
-        target: 85000000,
-        collected: 62300000,
-        donorsCount: 215,
-        daysLeft: 12,
-        urgency: 'medium',
-    },
-    {
-        id: 'camp-3',
-        title: 'Pembangunan Sumber Air Bersih Wilayah Pelosok',
-        category: 'Infrastruktur',
-        target: 120000000,
-        collected: 98000000,
-        donorsCount: 340,
-        daysLeft: 8,
-        urgency: 'high',
-    },
-]);
+const paymentMethods = [
+    'BCA',
+    'Mandiri',
+    'BRI',
+    'BNI',
+    'BSI',
+    'QRIS',
+    'GoPay',
+    'DANA',
+];
 
-const transactions = ref<Transaction[]>([
-    {
-        id: 'tx-001',
-        hash: '0x8f192b49c71a39d891b0f1a92e10a2f4',
-        campaign: 'Bantuan Medis Darurat Korban Gempa & Bencana',
-        category: 'Kemanusiaan',
-        amount: 250000,
-        amountEth: '0.0068 ETH',
-        date: '14 Menit yang lalu',
-        blockNumber: 19842109,
-        status: 'verified',
-    },
-    {
-        id: 'tx-002',
-        hash: '0x4c278a1f81d2937e0c4b2e8174df8342',
-        campaign: 'Beasiswa Pendidikan & Laptop Siswa Berprestasi',
-        category: 'Pendidikan',
-        amount: 500000,
-        amountEth: '0.0135 ETH',
-        date: '2 Jam yang lalu',
-        blockNumber: 19841850,
-        status: 'verified',
-    },
-    {
-        id: 'tx-003',
-        hash: '0x99a4e21b8c1945a0b73c4d119e34a781',
-        campaign: 'Pembangunan Sumber Air Bersih Wilayah Pelosok',
-        category: 'Infrastruktur',
-        amount: 100000,
-        amountEth: '0.0027 ETH',
-        date: 'Kemarin, 19:42',
-        blockNumber: 19839401,
-        status: 'verified',
-    },
-    {
-        id: 'tx-004',
-        hash: '0x3e18a902f4cb71369d12a9e8841029c5',
-        campaign: 'Bantuan Medis Darurat Korban Gempa & Bencana',
-        category: 'Kemanusiaan',
-        amount: 150000,
-        amountEth: '0.0041 ETH',
-        date: '12 Sep 2026',
-        blockNumber: 19834112,
-        status: 'verified',
-    },
-    {
-        id: 'tx-005',
-        hash: '0x7b54a1082c9e421a8f6d3391b0e51249',
-        campaign: 'Penanaman 1.000 Pohon Mangrove Pesisir',
-        category: 'Lingkungan',
-        amount: 75000,
-        amountEth: '0.0020 ETH',
-        date: '10 Sep 2026',
-        blockNumber: 19828941,
-        status: 'verified',
-    },
-]);
+const campaigns = computed(() => page.props.campaigns ?? []);
+const transactions = computed(() => page.props.transactions ?? []);
 
 // Summary Stats
 const totalDonationValue = computed(() => {
     return transactions.value.reduce((sum, tx) => sum + tx.amount, 0);
-});
-
-const verifiedTransactionsCount = computed(() => {
-    return transactions.value.filter((tx) => tx.status === 'verified').length;
 });
 
 // Filtered Transactions
@@ -175,7 +116,8 @@ const filteredTransactions = computed(() => {
         const matchesQuery =
             tx.campaign.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
             tx.hash.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            tx.category.toLowerCase().includes(searchQuery.value.toLowerCase());
+            tx.category.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+            tx.paymentMethod.toLowerCase().includes(searchQuery.value.toLowerCase());
         return matchesFilter && matchesQuery;
     });
 });
@@ -229,53 +171,39 @@ const handleCustomAmountInput = (e: Event) => {
     }
 };
 
-// Submit Simulation
 const submitDonation = () => {
     if (!selectedAmount.value || selectedAmount.value < 10000) return;
 
-    isSubmittingTx.value = true;
-    const targetCamp = campaigns.value.find((c) => c.id === selectedCampaignId.value) || campaigns.value[0];
-
-    setTimeout(() => {
-        const randomHex = Array.from({ length: 32 }, () =>
-            Math.floor(Math.random() * 16).toString(16)
-        ).join('');
-        const newTxHash = `0x${randomHex}`;
-        const newBlock = 19842110 + Math.floor(Math.random() * 20);
-
-        const newTx: Transaction = {
-            id: `tx-${Date.now()}`,
-            hash: newTxHash,
-            campaign: targetCamp.title,
-            category: targetCamp.category,
-            amount: selectedAmount.value,
-            amountEth: `${(selectedAmount.value / 37000000).toFixed(4)} ETH`,
-            date: 'Baru saja',
-            blockNumber: newBlock,
-            status: 'verified',
-        };
-
-        transactions.value.unshift(newTx);
-        targetCamp.collected += selectedAmount.value;
-        targetCamp.donorsCount += 1;
-
-        isSubmittingTx.value = false;
-        txSuccessMessage.value = true;
-
-        setTimeout(() => {
-            txSuccessMessage.value = false;
-            isDonateModalOpen.value = false;
-            selectedAmount.value = 100000;
-            customAmount.value = '';
-            donorNote.value = '';
-        }, 1800);
-    }, 1200);
+    router.post(`/campaigns/${selectedCampaignId.value}/donations`, {
+        amount: selectedAmount.value,
+        payment_method: selectedMethod.value,
+        donor_name: donorName.value || undefined,
+        donor_note: donorNote.value || undefined,
+    }, {
+        preserveScroll: true,
+        onStart: () => {
+            isSubmittingTx.value = true;
+        },
+        onSuccess: () => {
+            txSuccessMessage.value = true;
+            setTimeout(() => {
+                txSuccessMessage.value = false;
+                isDonateModalOpen.value = false;
+                selectedAmount.value = 100000;
+                customAmount.value = '';
+                donorNote.value = '';
+            }, 1800);
+        },
+        onFinish: () => {
+            isSubmittingTx.value = false;
+        },
+    });
 };
 </script>
 
 <template>
     <AppLayout>
-        <Head title="Dashboard - SafeGive Blockchain" />
+        <Head title="Dashboard - SafeGive Platform" />
 
         <div class="space-y-8">
             <!-- Hero Banner Section -->
@@ -289,22 +217,22 @@ const submitDonation = () => {
                         <div class="inline-flex items-center gap-2 rounded-full border border-emerald-300/60 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm">
                             <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             <IconSparkles class="h-3.5 w-3.5 text-emerald-600" />
-                            <span>Smart Contract SafeGive v1.0 Aktif</span>
+                            <span>Catatan Donasi Terlindungi</span>
                         </div>
 
                         <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
-                            <span class="rounded-md bg-white px-2.5 py-1 font-mono border border-slate-200 text-slate-700">Polygon Amoy</span>
-                            <span class="rounded-md bg-white px-2.5 py-1 font-mono border border-slate-200 text-slate-700">Block #19,842,109</span>
+                            <span class="rounded-md bg-white px-2.5 py-1 font-mono border border-slate-200 text-slate-700">Bank Transfer / QRIS</span>
+                            <span class="rounded-md bg-white px-2.5 py-1 font-mono border border-slate-200 text-slate-700">Hash & Enkripsi Aktif</span>
                         </div>
                     </div>
 
                     <div class="mt-6 max-w-3xl">
-                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700 sm:text-sm">Ruang Kebaikan Transparan</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700 sm:text-sm">Platform Donasi Terpercaya</p>
                         <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-tight">
                             Selamat Datang, <span class="text-emerald-700">{{ user?.name || 'Sahabat Kebaikan' }}</span> 👋
                         </h1>
                         <p class="mt-3.5 text-sm sm:text-base leading-relaxed text-slate-600">
-                            Setiap rupiah yang kamu salurkan tercatat permanen di <strong class="text-slate-800 font-semibold">buku besar blockchain terdesentralisasi</strong>. Transparan, aman, tanpa perantara manipulatif, dan berdampak langsung bagi yang membutuhkan.
+                            Transfer donasi dengan mudah melalui <strong class="text-slate-800 font-semibold">Bank BCA, Mandiri, BRI, BNI, atau E-Wallet / QRIS</strong> ke rekening resmi SafeGive. Setiap donasi dicatat di database dengan nominal terenkripsi dan bukti hash untuk menjaga integritas catatan.
                         </p>
                     </div>
 
@@ -324,117 +252,56 @@ const submitDonation = () => {
                             class="inline-flex items-center gap-2 rounded-xl border border-[#dce6d8] bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-[#edf4e9] hover:text-emerald-800"
                         >
                             <IconReceipt class="h-4 w-4 text-emerald-600" stroke-width="2" />
-                            <span>Cek Ledger On-Chain</span>
+                            <span>Lihat Catatan Donasi</span>
                         </a>
 
                         <div class="ml-auto hidden sm:flex items-center gap-2 text-xs text-slate-500">
                             <IconShieldCheck class="h-4 w-4 text-emerald-600" />
-                            <span>100% On-Chain Auditability</span>
+                                    <span>Catatan transaksi dapat diverifikasi</span>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- KPI Summary Cards -->
-            <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section class="grid grid-cols-1 gap-4">
                 <!-- Card 1: Total Kontribusi -->
                 <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Donasi Anda</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Donasi Ditampilkan</span>
                         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100/80 text-emerald-700">
                             <IconCoins class="h-5 w-5" stroke-width="2" />
                         </div>
                     </div>
                     <div class="mt-3">
                         <p class="text-2xl font-extrabold tracking-tight text-slate-900">{{ formatRupiah(totalDonationValue) }}</p>
-                        <div class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                            <IconTrendingUp class="h-3.5 w-3.5" />
-                            <span>+16.4% dari bulan lalu</span>
+                        <div class="mt-1.5 text-xs font-semibold text-slate-500">
+                            Dari riwayat donasi yang ditampilkan
                         </div>
                     </div>
                     <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Estimasi Kripto:</span>
-                        <span class="font-mono font-bold text-slate-600">~0.0301 ETH</span>
+                        <span>Metode Pembayaran:</span>
+                        <span class="font-semibold text-slate-600">Bank, QRIS & E-Wallet</span>
                     </div>
                 </div>
 
-                <!-- Card 2: Transaksi On-Chain -->
-                <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Transaksi Valid</span>
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100/80 text-teal-700">
-                            <IconShieldCheck class="h-5 w-5" stroke-width="2" />
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-2xl font-extrabold tracking-tight text-slate-900">{{ verifiedTransactionsCount }} <span class="text-sm font-semibold text-slate-500">Hash</span></p>
-                        <div class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                            <IconCheck class="h-3.5 w-3.5" stroke-width="2.5" />
-                            <span>100% Konsensus Node Lulus</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Konsensus:</span>
-                        <span class="font-mono font-bold text-slate-600">Proof-of-Stake</span>
-                    </div>
-                </div>
-
-                <!-- Card 3: Kampanye Didukung -->
-                <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Kampanye Diikuti</span>
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100/80 text-amber-700">
-                            <IconHeartHandshake class="h-5 w-5" stroke-width="2" />
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-2xl font-extrabold tracking-tight text-slate-900">3 <span class="text-sm font-semibold text-slate-500">Program</span></p>
-                        <div class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-amber-700">
-                            <IconClock class="h-3.5 w-3.5" />
-                            <span>2 Kampanye Mendekati Target</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Kategori Utama:</span>
-                        <span class="font-semibold text-slate-600">Medis & Edukasi</span>
-                    </div>
-                </div>
-
-                <!-- Card 4: Jiwa Berdampak -->
-                <div class="group relative overflow-hidden rounded-2xl border border-[#dce6d8] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Dampak Kebaikan</span>
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff0e9] text-[#c65d3d]">
-                            <IconUsers class="h-5 w-5" stroke-width="2" />
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-2xl font-extrabold tracking-tight text-slate-900">1.420+ <span class="text-sm font-semibold text-slate-500">Jiwa</span></p>
-                        <div class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#c65d3d]">
-                            <IconSparkles class="h-3.5 w-3.5" />
-                            <span>Penerima Manfaat Langsung</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Laporan Terakhir:</span>
-                        <span class="font-semibold text-slate-600">14 Sep 2026</span>
-                    </div>
-                </div>
             </section>
 
             <!-- Main Split Layout -->
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
                 <!-- Left Column: Transactions Ledger & Featured Campaigns (8 Cols) -->
                 <div class="space-y-8 lg:col-span-8">
-                    <!-- Blockchain Ledger Table Section -->
+                    <!-- Protected donation records -->
                     <section id="ledger-section" class="rounded-[24px] border border-[#dce6d8] bg-white p-6 shadow-sm sm:p-7">
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-5">
                             <div>
                                 <div class="flex items-center gap-2">
                                     <IconReceipt class="h-5 w-5 text-emerald-700" stroke-width="2" />
-                                    <h2 class="text-lg font-bold text-slate-900 tracking-tight">Ledger Transparansi Donasi</h2>
+                                    <h2 class="text-lg font-bold text-slate-900 tracking-tight">Catatan Donasi</h2>
                                 </div>
-                                <p class="mt-1 text-xs text-slate-500">Daftar transaksi on-chain tercatat secara kronologis di jaringan blockchain.</p>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Daftar transaksi donasi Anda dengan hash sebagai bukti integritas catatan.
+                                </p>
                             </div>
 
                             <!-- Filter Tabs -->
@@ -455,6 +322,14 @@ const submitDonation = () => {
                                 >
                                     Terverifikasi
                                 </button>
+                                <button
+                                    type="button"
+                                    class="rounded-lg px-3 py-1.5 transition"
+                                    :class="activeFilter === 'pending' ? 'bg-white text-amber-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                    @click="activeFilter = 'pending'"
+                                >
+                                    Menunggu
+                                </button>
                             </div>
                         </div>
 
@@ -465,7 +340,7 @@ const submitDonation = () => {
                                 <input
                                     v-model="searchQuery"
                                     type="text"
-                                    placeholder="Cari berdasarkan program donasi, kategori, atau hash..."
+                                    placeholder="Cari berdasarkan program donasi, metode bank, atau hash..."
                                     class="w-full rounded-xl border border-[#dce6d8] bg-[#fdfefc] pl-10 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                 />
                             </div>
@@ -477,7 +352,8 @@ const submitDonation = () => {
                                 <thead>
                                     <tr class="border-b border-[#e9efe6] text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                         <th class="pb-3 pl-2">Program Donasi</th>
-                                        <th class="pb-3">Hash Transaksi (On-Chain)</th>
+                                        <th class="pb-3">Metode & Referensi</th>
+                                        <th class="pb-3">Bukti Hash</th>
                                         <th class="pb-3 text-right">Nominal</th>
                                         <th class="pb-3 text-center">Status</th>
                                         <th class="pb-3 pr-2 text-right">Waktu</th>
@@ -497,6 +373,13 @@ const submitDonation = () => {
                                         </td>
 
                                         <td class="py-3.5">
+                                            <span class="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-800 uppercase">
+                                                {{ tx.paymentMethod }}
+                                            </span>
+                                            <p class="font-mono text-[10px] text-slate-500 mt-0.5">{{ tx.referenceCode }}</p>
+                                        </td>
+
+                                        <td class="py-3.5">
                                             <div class="flex items-center gap-1.5">
                                                 <span class="font-mono text-[11px] font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded-md">
                                                     {{ truncateHash(tx.hash) }}
@@ -511,18 +394,20 @@ const submitDonation = () => {
                                                     <IconCopy v-else class="h-3.5 w-3.5" />
                                                 </button>
                                             </div>
-                                            <span class="text-[10px] text-slate-400 font-mono">Block #{{ tx.blockNumber }}</span>
+                                            <span class="text-[10px] text-slate-400 font-mono">No. catatan #{{ tx.blockNumber }}</span>
                                         </td>
 
                                         <td class="py-3.5 text-right">
                                             <p class="font-bold text-slate-900">{{ formatRupiah(tx.amount) }}</p>
-                                            <p class="font-mono text-[10px] text-slate-400">{{ tx.amountEth }}</p>
                                         </td>
 
                                         <td class="py-3.5 text-center">
-                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100/70 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                                Terverifikasi
+                                            <span
+                                                class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                                                :class="tx.status === 'verified' ? 'bg-emerald-100/70 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                            >
+                                                <span class="h-1.5 w-1.5 rounded-full" :class="tx.status === 'verified' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                                                {{ tx.status === 'verified' ? 'Terverifikasi' : 'Menunggu konfirmasi' }}
                                             </span>
                                         </td>
 
@@ -532,7 +417,7 @@ const submitDonation = () => {
                                     </tr>
 
                                     <tr v-if="filteredTransactions.length === 0">
-                                        <td colspan="5" class="py-8 text-center text-slate-400">
+                                        <td colspan="6" class="py-8 text-center text-slate-400">
                                             Tidak ada riwayat donasi yang sesuai dengan pencarian Anda.
                                         </td>
                                     </tr>
@@ -552,13 +437,12 @@ const submitDonation = () => {
                                 <p class="mt-1 text-xs text-slate-500">Salurkan bantuanmu secara instan ke program terverifikasi audit publik.</p>
                             </div>
 
-                            <button
-                                type="button"
+                            <Link
+                                href="/campaigns"
                                 class="hidden text-xs font-bold text-emerald-700 hover:text-emerald-800 sm:block"
-                                @click="isDonateModalOpen = true"
                             >
                                 Jelajah Semua &rarr;
-                            </button>
+                            </Link>
                         </div>
 
                         <div class="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -604,80 +488,29 @@ const submitDonation = () => {
                                 </div>
 
                                 <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                                    <span class="text-[11px] font-mono text-slate-400">Smart Contract Escrow</span>
-                                    <button
-                                        type="button"
+                                    <span class="text-[11px] text-slate-400">Pencairan: Target/Expired</span>
+                                    <Link
+                                        :href="`/campaigns`"
                                         class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
-                                        @click="selectedCampaignId = camp.id; isDonateModalOpen = true"
                                     >
-                                        <span>Bantu Sekarang</span>
+                                        <span>Donasi Sekarang</span>
                                         <IconArrowUpRight class="h-3.5 w-3.5" />
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
                     </section>
                 </div>
 
-                <!-- Right Column: Web3 Identity Card, Integrity Pillars, & Network Status (4 Cols) -->
+                <!-- Right Column: Record integrity -->
                 <div class="space-y-6 lg:col-span-4">
-                    <!-- Web3 Identity & Smart Wallet Card -->
-                    <div class="relative overflow-hidden rounded-[24px] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-6 text-white shadow-xl">
-                        <!-- Glow effect -->
-                        <div class="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-emerald-500/20 blur-2xl"></div>
-
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                    <IconWallet class="h-4 w-4" />
-                                </div>
-                                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Dompet Kebaikan</span>
-                            </div>
-                            <span class="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
-                                On-Chain
-                            </span>
-                        </div>
-
-                        <div class="mt-5">
-                            <p class="text-xs text-slate-400">Alamat Smart Contract / Wallet:</p>
-                            <div class="mt-1.5 flex items-center justify-between rounded-xl bg-slate-800/80 px-3 py-2 border border-slate-700/60">
-                                <span class="font-mono text-xs text-slate-200">0x71C...4e89</span>
-                                <button
-                                    type="button"
-                                    :title="copiedItem === 'wallet' ? 'Tersalin!' : 'Salin Alamat'"
-                                    class="rounded p-1 text-slate-400 hover:text-white transition"
-                                    @click="copyToClipboard('0x71C283F67a1290Bc19f65B9e0c524e89', 'wallet')"
-                                >
-                                    <IconCheck v-if="copiedItem === 'wallet'" class="h-3.5 w-3.5 text-emerald-400" />
-                                    <IconCopy v-else class="h-3.5 w-3.5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="mt-5 grid grid-cols-2 gap-3 border-t border-slate-800 pt-4 text-xs">
-                            <div>
-                                <span class="text-[10px] text-slate-400 uppercase tracking-wide">Jaringan</span>
-                                <p class="mt-0.5 font-bold text-slate-200">Polygon Amoy</p>
-                            </div>
-                            <div>
-                                <span class="text-[10px] text-slate-400 uppercase tracking-wide">Kecepatan Blok</span>
-                                <p class="mt-0.5 font-bold text-emerald-400">~2.1 Detik</p>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 rounded-xl bg-slate-800/40 p-3 border border-slate-800 text-[11px] text-slate-300 flex items-start gap-2">
-                            <IconLock class="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                            <span>Kriptografi asimetris menjamin transparansi tanpa risiko manipulasi riwayat donasi.</span>
-                        </div>
-                    </div>
-
-                    <!-- Blockchain Integrity Pillars -->
+                    <!-- Record integrity -->
                     <div class="rounded-[24px] border border-[#dce6d8] bg-white p-6 shadow-sm">
                         <h3 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
                             <IconShieldCheck class="h-4 w-4 text-emerald-700" />
-                            <span>Pilar Integritas SafeGive</span>
+                            <span>Perlindungan Catatan</span>
                         </h3>
-                        <p class="mt-1 text-xs text-slate-500 leading-relaxed">Mengapa donasi blockchain lebih aman dan transparan?</p>
+                        <p class="mt-1 text-xs text-slate-500 leading-relaxed">Setiap donasi disimpan dengan perlindungan enkripsi dan hash.</p>
 
                         <div class="mt-4 space-y-3.5">
                             <div class="flex items-start gap-3">
@@ -685,8 +518,8 @@ const submitDonation = () => {
                                     1
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-800">Catatan Abadi (Immutable)</p>
-                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Riwayat transaksi tidak dapat dihapus atau dipalsukan oleh siapapun.</p>
+                                    <p class="text-xs font-bold text-slate-800">Rekening resmi</p>
+                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Pembayaran diarahkan ke rekening resmi yang dikelola admin.</p>
                                 </div>
                             </div>
 
@@ -695,8 +528,8 @@ const submitDonation = () => {
                                     2
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-800">Milestone Smart Contract</p>
-                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Dana hanya dicairkan sesuai bukti capaian dan verifikasi lapangan.</p>
+                                    <p class="text-xs font-bold text-slate-800">Nominal terenkripsi</p>
+                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Nominal donasi disimpan dalam bentuk terenkripsi untuk menjaga kerahasiaan.</p>
                                 </div>
                             </div>
 
@@ -705,37 +538,39 @@ const submitDonation = () => {
                                     3
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-800">Tanpa Potongan Tersembunyi</p>
-                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Setiap saldo dialokasikan 100% untuk penerima manfaat.</p>
+                                    <p class="text-xs font-bold text-slate-800">Bukti hash</p>
+                                    <p class="mt-0.5 text-[11px] text-slate-500 leading-relaxed">Hash membantu memeriksa bahwa catatan transaksi tidak berubah.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Live Node Status & Audit Log -->
+                    <!-- Live Audit Activity -->
                     <div class="rounded-[24px] border border-[#dce6d8] bg-white p-6 shadow-sm">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Aktivitas Ledger Terkini</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Transaksi Terbaru</span>
                             <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
                         </div>
 
-                        <div class="mt-4 space-y-3 font-mono text-[11px]">
+                        <div v-if="transactions.length > 0" class="mt-4 space-y-3 font-mono text-[11px]">
                             <div class="rounded-xl bg-[#f8faf6] p-2.5 border border-[#e8f0e5]">
                                 <div class="flex items-center justify-between text-slate-500">
-                                    <span>Sync Node #1</span>
-                                    <span class="text-emerald-700 font-semibold">12ms latency</span>
+                                    <span>{{ transactions[0].date }}</span>
+                                    <span class="text-emerald-700 font-semibold">{{ transactions[0].status === 'verified' ? 'Terkonfirmasi' : 'Menunggu' }}</span>
                                 </div>
-                                <p class="mt-1 text-slate-800 font-medium">Smart contract verifikasi blok #19842109 sukses</p>
+                                <p class="mt-1 text-slate-800 font-medium">{{ transactions[0].campaign }}</p>
+                                <p class="mt-1 text-slate-500">Hash {{ truncateHash(transactions[0].hash) }}</p>
                             </div>
 
                             <div class="rounded-xl bg-[#f8faf6] p-2.5 border border-[#e8f0e5]">
                                 <div class="flex items-center justify-between text-slate-500">
-                                    <span>Penyaluran Tahap 1</span>
-                                    <span class="text-slate-400">1 jam lalu</span>
+                                    <span>Metode pembayaran</span>
+                                    <span class="text-slate-400">{{ transactions[0].paymentMethod }}</span>
                                 </div>
-                                <p class="mt-1 text-slate-800 font-medium">Pencairan logistik medis Rp 45.000.000 tervalidasi</p>
+                                <p class="mt-1 text-slate-800 font-medium">Referensi {{ transactions[0].referenceCode }}</p>
                             </div>
                         </div>
+                        <p v-else class="mt-4 rounded-xl bg-[#f8faf6] p-4 text-xs text-slate-500">Belum ada transaksi donasi.</p>
                     </div>
                 </div>
             </div>
@@ -757,7 +592,7 @@ const submitDonation = () => {
                         </div>
                         <div>
                             <h3 class="text-base font-bold text-slate-900">Salurkan Donasi Cepat</h3>
-                            <p class="text-xs text-slate-500">Tercatat di Smart Contract SafeGive</p>
+                            <p class="text-xs text-slate-500">Transfer ke Rekening Resmi SafeGive</p>
                         </div>
                     </div>
                     <button
@@ -771,7 +606,6 @@ const submitDonation = () => {
 
                 <!-- Modal Body -->
                 <div class="p-6 space-y-5">
-                    <!-- Success Notification inside Modal -->
                     <div
                         v-if="txSuccessMessage"
                         class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center text-emerald-900"
@@ -779,11 +613,30 @@ const submitDonation = () => {
                         <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md">
                             <IconCheck class="h-6 w-6" stroke-width="2.5" />
                         </div>
-                        <h4 class="mt-2 text-sm font-bold">Donasi Berhasil Dicatat ke Blockchain!</h4>
-                        <p class="mt-1 text-xs text-emerald-700">Hash transaksi telah dihasilkan dan diverifikasi dalam antrean blok.</p>
+                        <h4 class="mt-2 text-sm font-bold">Donasi Berhasil Dicatat!</h4>
+                        <p class="mt-1 text-xs text-emerald-700">Catatan donasi tersimpan dan bukti hash telah dibuat.</p>
                     </div>
 
                     <template v-else>
+                        <!-- Central Bank Info Mini Card -->
+                        <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs">
+                            <div class="flex items-center justify-between font-bold text-emerald-900">
+                                <span>{{ adminBank.bank_name }}</span>
+                                <span class="rounded bg-emerald-200/80 px-2 py-0.5 text-[10px]">{{ adminBank.bank_code }}</span>
+                            </div>
+                            <div class="mt-1 flex items-center justify-between font-mono font-black text-slate-900 text-sm">
+                                <span>{{ adminBank.account_number }}</span>
+                                <button
+                                    type="button"
+                                    class="text-[11px] font-sans font-bold text-emerald-800 hover:underline"
+                                    @click="copyToClipboard(adminBank.account_number, 'modal-bank')"
+                                >
+                                    {{ copiedItem === 'modal-bank' ? 'Tersalin!' : 'Salin Rekening' }}
+                                </button>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-0.5">a.n. {{ adminBank.account_name }}</p>
+                        </div>
+
                         <!-- Select Campaign -->
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
@@ -793,7 +646,7 @@ const submitDonation = () => {
                                 v-model="selectedCampaignId"
                                 class="w-full rounded-xl border border-[#dce6d8] bg-[#fcfdfa] px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                             >
-                                <option v-for="c in campaigns" :key="c.id" :value="c.id">
+                                <option v-for="c in campaigns" :key="c.id" :value="String(c.id)">
                                     {{ c.title }} ({{ c.category }})
                                 </option>
                             </select>
@@ -809,7 +662,7 @@ const submitDonation = () => {
                                     v-for="amt in presetAmounts"
                                     :key="amt"
                                     type="button"
-                                    class="rounded-xl border py-2.5 text-xs font-bold transition text-center"
+                                    class="rounded-xl border py-2 text-xs font-bold transition text-center"
                                     :class="
                                         selectedAmount === amt && !customAmount
                                             ? 'border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm'
@@ -821,42 +674,31 @@ const submitDonation = () => {
                                 </button>
                             </div>
 
-                            <!-- Custom Amount Input -->
-                            <div class="mt-3 relative">
+                            <div class="mt-2.5 relative">
                                 <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
                                 <input
                                     :value="customAmount"
                                     type="text"
                                     placeholder="Atau masukkan nominal lainnya..."
-                                    class="w-full rounded-xl border border-[#dce6d8] bg-[#fcfdfa] pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                    class="w-full rounded-xl border border-[#dce6d8] bg-[#fcfdfa] pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                     @input="handleCustomAmountInput"
                                 />
                             </div>
                         </div>
 
-                        <!-- Donor Note -->
+                        <!-- Payment Method -->
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                                Doa / Catatan Kebaikan (Opsional)
+                                Saluran Transfer
                             </label>
-                            <textarea
-                                v-model="donorNote"
-                                rows="2"
-                                placeholder="Tuliskan harapan atau doa terbaik untuk penerima manfaat..."
-                                class="w-full rounded-xl border border-[#dce6d8] bg-[#fcfdfa] p-3 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                            ></textarea>
-                        </div>
-
-                        <!-- Blockchain Gas & Fee Summary -->
-                        <div class="rounded-xl bg-[#f3f6ef] p-3 text-xs text-slate-600 space-y-1.5">
-                            <div class="flex justify-between">
-                                <span>Estimasi Biaya Gas Jaringan:</span>
-                                <span class="font-bold text-emerald-700 font-mono">Gratis (Ditanggung SafeGive)</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Verifikasi On-Chain:</span>
-                                <span class="font-bold text-slate-800">Instan (~2 detik)</span>
-                            </div>
+                            <select
+                                v-model="selectedMethod"
+                                class="w-full rounded-xl border border-[#dce6d8] bg-[#fcfdfa] px-3.5 py-2 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none"
+                            >
+                                <option v-for="m in paymentMethods" :key="m" :value="m">
+                                    {{ m }}
+                                </option>
+                            </select>
                         </div>
                     </template>
                 </div>
@@ -878,11 +720,11 @@ const submitDonation = () => {
                     >
                         <span v-if="isSubmittingTx" class="flex items-center gap-2">
                             <span class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                            Memvalidasi di Blockchain...
+                            Mengenkripsi Paillier...
                         </span>
                         <span v-else class="flex items-center gap-1.5">
                             <IconHeartHandshake class="h-4 w-4" />
-                            Konfirmasi Donasi ({{ formatRupiah(selectedAmount) }})
+                            Konfirmasi Transfer ({{ formatRupiah(selectedAmount) }})
                         </span>
                     </button>
                 </div>

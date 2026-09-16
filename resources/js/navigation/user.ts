@@ -5,18 +5,23 @@ export const userNavigation = [
         icon: 'grid',
     },
     {
-        label: 'Donasi Saya',
-        href: '/dashboard#donations',
+        label: 'Eksplorasi Kampanye',
+        href: '/campaigns',
         icon: 'heart',
     },
     {
-        label: 'Aktivitas Ledger',
-        href: '/dashboard#activity',
+        label: 'Riwayat Transaksi',
+        href: '/transactions',
         icon: 'activity',
     },
     {
-        label: 'Kampanye Aktif',
-        href: '/dashboard#campaigns',
+        label: 'Kampanye Saya',
+        href: '/my-campaigns',
         icon: 'receipt',
+    },
+    {
+        label: 'Panduan',
+        href: '/panduan',
+        icon: 'guide',
     },
 ];

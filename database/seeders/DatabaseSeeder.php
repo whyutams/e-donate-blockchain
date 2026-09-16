@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Admin;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -20,10 +19,26 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
         ]);
-        User::create([
-            'name' => 'Wahyu S Tamuu',
-            'email' => 'wahyu@example.com',
-            'password' => bcrypt('password'),
-        ]);
+
+        $adminRoleId = Role::where('slug', 'admin')->value('id');
+        $userRoleId = Role::where('slug', 'user')->value('id');
+
+        User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'SafeGive Admin',
+                'password' => 'password',
+                'role_id' => $adminRoleId,
+            ],
+        );
+
+        User::updateOrCreate(
+            ['email' => 'wahyu@example.com'],
+            [
+                'name' => 'Wahyu S Tamuu',
+                'password' => 'password',
+                'role_id' => $userRoleId,
+            ],
+        );
     }
 }

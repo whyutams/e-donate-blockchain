@@ -1,8 +1,6 @@
 <?php
 
 use App\Actions\LogoutAction;
-use App\Http\Controllers\ManagementController;
-use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;

@@ -38,9 +38,21 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user()?->only('name', 'email'),
+                'user' => $request->user()?->only('id', 'name', 'email'),
                 'is_admin' => $request->user()?->isAdmin() ?? false,
                 'is_user' => $request->user()?->isUser() ?? false,
+            ],
+            'admin_bank' => fn () => \App\Models\AdminBankSetting::current(),
+            'midtrans' => fn () => [
+                'client_key' => app(\App\Services\MidtransService::class)->getClientKey(),
+                'is_production' => app(\App\Services\MidtransService::class)->isProduction(),
+                'snap_url' => app(\App\Services\MidtransService::class)->getSnapJsUrl(),
+                'is_configured' => app(\App\Services\MidtransService::class)->isConfigured(),
+                'is_active' => \App\Models\AdminBankSetting::current()->isMidtransActive(),
+            ],
+            'flash' => [
+                'status' => fn () => $request->session()->get('status'),
+                'error' => fn () => $request->session()->get('error'),
             ],
         ];
     }
