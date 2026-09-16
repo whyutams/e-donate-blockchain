@@ -841,11 +841,40 @@ const isWithdrawn = computed(() => {
                     </div>
 
                     <div v-else class="mt-5 space-y-5">
-                                <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
-                                    Sisa target donasi: <strong>{{ formatRupiah(remainingAmount) }}</strong>. Nominal di atas sisa target tidak dapat dipilih.
-                                </div>
-                        <!-- Payment Type Tabs -->
-                        <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl">
+                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                            Sisa target donasi: <strong>{{ formatRupiah(remainingAmount) }}</strong>. Nominal di atas sisa target tidak dapat dipilih.
+                        </div>
+
+                        <!-- If user is NOT logged in: Prompt to Login to Donate -->
+                        <div v-if="!page.props.auth?.user" class="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/60 p-6 text-center shadow-xs">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 mb-3">
+                                <IconLock class="h-6 w-6" />
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-900">Wajib Masuk Akun untuk Berdonasi</h3>
+                            <p class="mt-1.5 text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+                                Untuk menjaga integritas pencatatan ledger blockchain dan keamanan transaksi, Anda wajib login terlebih dahulu sebelum menyalurkan donasi.
+                            </p>
+                            <div class="mt-5 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                                <Link
+                                    href="/login"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-800 transition active:scale-95"
+                                >
+                                    <span>Masuk ke Akun</span>
+                                    <IconArrowRight class="h-4 w-4" />
+                                </Link>
+                                <Link
+                                    href="/register"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                                >
+                                    <span>Daftar Akun Baru</span>
+                                </Link>
+                            </div>
+                        </div>
+
+                        <!-- If user IS logged in: Show Payment Type Tabs & Forms -->
+                        <template v-else>
+                            <!-- Payment Type Tabs -->
+                            <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl">
                             <button
                                 type="button"
                                 class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
@@ -1172,6 +1201,7 @@ const isWithdrawn = computed(() => {
                                 </button>
                             </form>
                         </div>
+                    </template>
                     </div>
                 </section>
             </div>

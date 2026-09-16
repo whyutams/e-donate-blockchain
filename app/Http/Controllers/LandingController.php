@@ -16,7 +16,6 @@ class LandingController extends Controller
             ->with('organizer:id,name')
             ->whereIn('status', ['active', 'goal_reached'])
             ->latest()
-            ->take(9)
             ->get()
             ->map(fn (Campaign $campaign) => [
                 'id' => $campaign->id,

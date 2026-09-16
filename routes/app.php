@@ -15,6 +15,10 @@ use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
+// Publicly viewable campaign list and detail routes
+Route::get('/campaigns', [CampaignController::class, 'index'])->name('campaigns.index');
+Route::get('/campaigns/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');
+
 Route::middleware('auth')->group(function () {
 	Route::get('/dashboard', DashboardController::class)->name('dashboard');
 	Route::get('/profile', function (Request $request) {
@@ -25,7 +29,7 @@ Route::middleware('auth')->group(function () {
 		]);
 	})->name('profile');
 	Route::post('/verification-profile', [VerificationProfileController::class, 'store'])->name('verification-profile.store');
-	Route::resource('campaigns', CampaignController::class)->only(['index', 'show', 'create', 'store', 'update', 'destroy']);
+	Route::resource('campaigns', CampaignController::class)->only(['create', 'store', 'update', 'destroy']);
 	Route::patch('/campaigns/{campaign}/video-url', [CampaignController::class, 'updateVideoUrl'])->name('campaigns.video-url.update');
 	Route::get('/my-campaigns', [CampaignController::class, 'mine'])->name('campaigns.mine');
 	Route::post('/campaigns/{campaign}/donations', [DonationController::class, 'store'])->name('campaigns.donations.store');

@@ -99,15 +99,15 @@ class DonationEncryptionTest extends TestCase
         $this->assertNull($donation->encrypted_donor_name);
     }
 
-    public function test_campaign_detail_requires_authentication(): void
+    public function test_campaign_detail_can_be_viewed_without_login(): void
     {
         $organizer = User::factory()->create();
         $campaign = Campaign::create([
             'organizer_id' => $organizer->id,
-            'title' => 'Kampanye Uji Auth',
-            'description' => 'Testing route guard.',
+            'title' => 'Kampanye Uji Publik',
+            'description' => 'Testing public viewing of campaign detail.',
             'category' => 'Kesehatan',
-            'slug' => 'kampanye-uji-auth',
+            'slug' => 'kampanye-uji-publik',
             'target_amount' => 5000000,
             'starts_at' => now()->subDay(),
             'ends_at' => now()->addDays(30),
@@ -117,13 +117,47 @@ class DonationEncryptionTest extends TestCase
             'status' => 'active',
         ]);
 
-        // Unauthenticated access must redirect to login
+        // Unauthenticated access must succeed (200 OK)
         $response = $this->get("/campaigns/{$campaign->id}");
-        $response->assertRedirect('/login');
+        $response->assertStatus(200);
 
-        // Authenticated access succeeds
+        // Authenticated access also succeeds (200 OK)
         $user = User::factory()->create();
         $authResponse = $this->actingAs($user)->get("/campaigns/{$campaign->id}");
         $authResponse->assertStatus(200);
+    }
+
+    public function test_making_donation_requires_authentication(): void
+    {
+        $organizer = User::factory()->create();
+        $campaign = Campaign::create([
+            'organizer_id' => $organizer->id,
+            'title' => 'Kampanye Uji Donasi Auth',
+            'description' => 'Testing donation auth guard.',
+            'category' => 'Pendidikan',
+            'slug' => 'kampanye-uji-donasi-auth',
+            'target_amount' => 5000000,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDays(30),
+            'payout_bank_name' => 'BCA',
+            'payout_account_number' => '1122334455',
+            'payout_account_name' => 'Yayasan Uji',
+            'status' => 'active',
+        ]);
+
+        // Unauthenticated donation submission must redirect to login
+        $guestResponse = $this->post("/campaigns/{$campaign->id}/donations", [
+            'amount' => 50000,
+            'payment_method' => 'BCA',
+            'donor_name' => 'Guest Donator',
+        ]);
+        $guestResponse->assertRedirect('/login');
+
+        // Unauthenticated midtrans snap creation must also redirect to login
+        $guestSnapResponse = $this->postJson("/campaigns/{$campaign->id}/donations/snap", [
+            'amount' => 50000,
+            'donor_name' => 'Guest Donator',
+        ]);
+        $guestSnapResponse->assertStatus(401);
     }
 }

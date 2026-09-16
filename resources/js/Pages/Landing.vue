@@ -100,27 +100,29 @@ const scrollToSection = (id: string) => {
         <!-- NAVBAR -->
         <header class="sticky top-0 z-40 border-b border-[#dce6d8] bg-white/95 backdrop-blur-md">
             <div class="mx-auto flex h-18 max-w-6xl items-center justify-between px-4 sm:px-8">
-                <!-- Brand Logo (Identical to Dashboard) -->
-                <Link href="/" class="flex min-w-0 items-center gap-3">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
-                        <IconShieldCheck class="h-5 w-5" stroke-width="2.2" />
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-base font-bold tracking-tight text-slate-900">Safe<span class="text-emerald-700">Give</span></span>
-                        <span class="text-[10px] font-medium tracking-wide text-slate-400 uppercase">Blockchain Donate</span>
-                    </div>
-                </Link>
+                <!-- Brand Logo & Navlink (Placed next to brand) -->
+                <div class="flex items-center gap-6 sm:gap-8">
+                    <Link href="/" class="flex min-w-0 items-center gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
+                            <IconShieldCheck class="h-5 w-5" stroke-width="2.2" />
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-base font-bold tracking-tight text-slate-900">Safe<span class="text-emerald-700">Give</span></span>
+                            <span class="text-[10px] font-medium tracking-wide text-slate-400 uppercase">Blockchain Donate</span>
+                        </div>
+                    </Link>
 
-                <!-- Navigation (Only Kampanye) -->
-                <nav class="hidden sm:flex items-center">
-                    <button
-                        type="button"
-                        @click="scrollToSection('kampanye')"
-                        class="text-sm font-bold text-slate-700 transition hover:text-emerald-700"
-                    >
-                        Kampanye
-                    </button>
-                </nav>
+                    <!-- Navigation Link -->
+                    <nav class="flex items-center">
+                        <button
+                            type="button"
+                            @click="scrollToSection('kampanye')"
+                            class="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-[#edf4e9] hover:text-emerald-700"
+                        >
+                            Kampanye
+                        </button>
+                    </nav>
+                </div>
 
                 <!-- Auth Action Buttons -->
                 <div class="flex items-center gap-3">
@@ -191,23 +193,13 @@ const scrollToSection = (id: string) => {
 
         <!-- KAMPANYE SECTION -->
         <section id="kampanye" class="py-12 sm:py-16 max-w-6xl mx-auto px-4 sm:px-8">
-            <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
-                <div>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-                        Kampanye Donasi
-                    </h2>
-                    <p class="mt-1 text-xs sm:text-sm text-slate-600">
-                        Pilih program kebaikan dan salurkan donasi Anda secara langsung.
-                    </p>
-                </div>
-
-                <Link
-                    href="/campaigns"
-                    class="inline-flex items-center gap-1.5 rounded-xl border border-[#dce6d8] bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-[#edf4e9] hover:text-emerald-800"
-                >
-                    <span>Semua Kampanye</span>
-                    <IconArrowRight class="h-3.5 w-3.5" />
-                </Link>
+            <div class="mb-8">
+                <h2 class="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                    Kampanye Donasi
+                </h2>
+                <p class="mt-1 text-xs sm:text-sm text-slate-600">
+                    Pilih program kebaikan dan salurkan donasi Anda secara langsung.
+                </p>
             </div>
 
             <!-- SEARCH & CATEGORY FILTER -->
