@@ -389,17 +389,22 @@ const getPlatformInfo = (url: string | null | undefined) => {
                                 <div class="flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                         <div class="flex items-center gap-2">
-                                            <span class="font-bold text-slate-900 text-sm">
-                                                {{ donation.is_anonymous ? 'Anonim' : donation.donor_name }}
-                                            </span>
-                                            <span
-                                                v-if="donation.is_anonymous"
-                                                class="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800"
-                                                title="Nama donatur dienkripsi menggunakan Paillier Homomorphic Encryption"
-                                            >
-                                                <IconLock class="h-3 w-3" />
-                                                Terenkripsi Paillier
-                                            </span>
+                                            <template v-if="donation.is_anonymous">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="inline-flex items-center gap-1 font-mono text-xs font-semibold text-emerald-900 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg" :title="donation.encrypted_donor_name || donation.donor_name">
+                                                        <IconLock class="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+                                                        <span class="font-mono">{{ shortHash(donation.encrypted_donor_name || donation.donor_name) }}</span>
+                                                    </span>
+                                                    <span class="rounded bg-emerald-100/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                                        Terenkripsi
+                                                    </span>
+                                                </div>
+                                            </template>
+                                            <template v-else>
+                                                <span class="font-bold text-slate-900 text-sm">
+                                                    {{ donation.donor_name }}
+                                                </span>
+                                            </template>
                                         </div>
 
                                         <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">

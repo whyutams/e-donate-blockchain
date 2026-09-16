@@ -781,10 +781,15 @@ const isWithdrawn = computed(() => {
                             <div>
                                 <div class="flex items-center gap-2">
                                     <template v-if="donation.is_anonymous">
-                                        <span class="inline-flex items-center gap-1 font-bold text-emerald-900 text-xs bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-lg">
-                                            <IconLock class="h-3 w-3 text-emerald-700" />
-                                            <span>Anonim (Terenkripsi Paillier)</span>
-                                        </span>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center gap-1 font-mono text-xs font-semibold text-emerald-900 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-lg" :title="donation.encrypted_donor_name || donation.donor_name">
+                                                <IconLock class="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+                                                <span class="font-mono">{{ shortHash(donation.encrypted_donor_name || donation.donor_name) }}</span>
+                                            </span>
+                                            <span class="rounded bg-emerald-100/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                                Terenkripsi
+                                            </span>
+                                        </div>
                                     </template>
                                     <template v-else>
                                         <span class="font-bold text-slate-900 text-xs">{{ donation.donor_name }}</span>
