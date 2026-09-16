@@ -116,8 +116,14 @@ class PaillierService
         $lambda = $this->integer($keys['lambda']);
         $mu = $this->integer($keys['mu']);
         $lValue = $this->lFunction($this->integer($ciphertext)->powMod($lambda, $nSquared), $n);
+        $message = $lValue->multiply($mu)->divide($n)[1];
 
-        return (int) $lValue->multiply($mu)->divide($n)[1]->toString();
+        $maxInt = new BigInteger(PHP_INT_MAX);
+        if ($message->compare($maxInt) > 0 || $message->compare(new BigInteger(0)) < 0) {
+            return 0;
+        }
+
+        return (int) $message->toString();
     }
 
     /** @return array<string, string> */
