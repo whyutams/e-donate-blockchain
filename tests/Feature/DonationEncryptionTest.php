@@ -38,8 +38,6 @@ class DonationEncryptionTest extends TestCase
             'payment_method' => 'BCA',
             'donor_name' => 'Budi Santoso Rahasia',
             'is_anonymous' => true,
-            'donor_email' => 'budi@example.com',
-            'donor_phone' => '081234567890',
             'donor_note' => 'Semoga berkah selalu.',
         ]);
 
@@ -84,8 +82,6 @@ class DonationEncryptionTest extends TestCase
             'payment_method' => 'BSI',
             'donor_name' => 'Siti Nurhaliza',
             'is_anonymous' => false,
-            'donor_email' => 'siti@example.com',
-            'donor_phone' => '081298765432',
         ]);
 
         $response->assertSessionHasNoErrors();
@@ -187,8 +183,6 @@ class DonationEncryptionTest extends TestCase
             'amount' => 100000,
             'donor_name' => 'Ahmad Dahlan Rahasia',
             'is_anonymous' => true,
-            'donor_email' => 'ahmad@example.com',
-            'donor_phone' => '081234567890',
             'donor_note' => 'Semoga lekas pulih.',
         ]);
 

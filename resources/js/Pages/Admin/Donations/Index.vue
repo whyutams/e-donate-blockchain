@@ -18,8 +18,6 @@ interface DonationItem {
     campaign_id: number;
     campaign_title: string;
     donor_name: string;
-    donor_email: string | null;
-    donor_phone: string | null;
     payment_method: string;
     reference_code: string | null;
     payment_proof_url: string | null;
@@ -191,7 +189,6 @@ const shortHash = (hash: string) => `${hash.slice(0, 8)}...${hash.slice(-6)}`;
                                     <p class="font-bold text-slate-900 text-sm">{{ d.campaign_title }}</p>
                                     <p class="mt-0.5 text-xs text-slate-700 font-medium">
                                         {{ d.donor_name }}
-                                        <span v-if="d.donor_email" class="text-slate-400">({{ d.donor_email }})</span>
                                     </p>
                                     <p v-if="d.donor_note" class="mt-1 text-[11px] italic text-slate-500">
                                         "{{ d.donor_note }}"

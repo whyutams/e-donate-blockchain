@@ -39,8 +39,6 @@ class MidtransController extends Controller
             'amount' => ['required', 'integer', 'min:1', 'max:1000000000'],
             'donor_name' => ['nullable', 'string', 'max:100'],
             'is_anonymous' => ['nullable', 'boolean'],
-            'donor_email' => ['nullable', 'email', 'max:100'],
-            'donor_phone' => ['nullable', 'string', 'max:30'],
             'donor_note' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -80,17 +78,12 @@ class MidtransController extends Controller
         // Kode Referensi Unik Order ID Midtrans (Maksimal 50 karakter)
         $referenceCode = 'SG-' . date('ymd') . '-' . strtoupper(Str::random(6));
 
-        $donorEmail = ! empty($validated['donor_email']) ? $validated['donor_email'] : ($request->user()?->email ?? 'donor@example.com');
-        $donorPhone = ! empty($validated['donor_phone']) ? $validated['donor_phone'] : '081234567890';
-
         $donation = Donation::create([
             'campaign_id' => $campaign->id,
             'donor_id' => $request->user()?->id,
             'is_anonymous' => $isAnonymous,
             'donor_name' => $displayDonorName,
             'encrypted_donor_name' => $encryptedDonorName,
-            'donor_email' => $donorEmail,
-            'donor_phone' => $donorPhone,
             'payment_method' => 'midtrans',
             'reference_code' => $referenceCode,
             'donor_note' => $validated['donor_note'] ?? null,
@@ -104,8 +97,7 @@ class MidtransController extends Controller
         try {
             $customer = [
                 'name' => $displayDonorName,
-                'email' => $donorEmail,
-                'phone' => $donorPhone,
+                'email' => $request->user()?->email ?? 'donor@example.com',
             ];
 
             $snap = $midtrans->createSnapTransaction($donation, $campaign, $amount, $customer);

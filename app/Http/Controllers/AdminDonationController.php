@@ -25,8 +25,6 @@ class AdminDonationController extends Controller
                 'campaign_id' => $donation->campaign_id,
                 'campaign_title' => $donation->campaign?->title ?? 'Kampanye dihapus',
                 'donor_name' => $donation->donor_name ?? $donation->donor?->name ?? 'Anonim',
-                'donor_email' => $donation->donor_email ?? $donation->donor?->email,
-                'donor_phone' => $donation->donor_phone,
                 'payment_method' => $donation->payment_method,
                 'reference_code' => $donation->reference_code,
                 'payment_proof_url' => $donation->payment_proof_path ? asset('storage/' . $donation->payment_proof_path) : null,

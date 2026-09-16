@@ -13,8 +13,6 @@ class Donation extends Model
         'is_anonymous',
         'donor_name',
         'encrypted_donor_name',
-        'donor_email',
-        'donor_phone',
         'payment_method',
         'reference_code',
         'snap_token',
