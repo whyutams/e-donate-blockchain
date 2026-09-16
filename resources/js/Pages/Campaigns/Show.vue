@@ -238,6 +238,7 @@ const payWithMidtrans = async () => {
             body: JSON.stringify({
                 amount: parseInt(form.amount, 10),
                 donor_name: form.donor_name,
+                is_anonymous: form.is_anonymous,
                 donor_email: form.donor_email,
                 donor_phone: form.donor_phone,
                 donor_note: form.donor_note,
@@ -969,7 +970,7 @@ const isWithdrawn = computed(() => {
                                         class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
                                     />
                                     <label for="anon-midtrans" class="text-xs font-medium text-slate-700 cursor-pointer">
-                                        Sembunyikan nama (Enkripsi Identitas dengan Kriptografi Paillier)
+                                        Sembunyikan nama
                                     </label>
                                 </div>
                                 <div v-if="form.is_anonymous" class="mt-2 rounded-xl bg-emerald-50/90 border border-emerald-200/80 p-2.5 text-[11px] text-emerald-900 leading-relaxed shadow-2xs">
@@ -977,7 +978,7 @@ const isWithdrawn = computed(() => {
                                         <IconShieldCheck class="h-3.5 w-3.5 text-emerald-700" />
                                         <span>Enkripsi Paillier 1024-bit Aktif</span>
                                     </div>
-                                    Nama Anda akan dienkripsi secara asimetris dengan public key Paillier. Pada ledger blockchain publik, nama Anda disamarkan sebagai <strong>Hamba Allah (Terenkripsi)</strong> dengan SHA-256 commitment hash.
+                                    Nama donatur yang Anda masukkan dienkripsi secara asimetris menggunakan Paillier cryptosystem.
                                 </div>
                             </div>
 
@@ -1148,7 +1149,7 @@ const isWithdrawn = computed(() => {
                                             class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
                                         />
                                         <label for="anon" class="text-xs font-medium text-slate-700 cursor-pointer">
-                                            Sembunyikan nama (Enkripsi Identitas dengan Kriptografi Paillier)
+                                            Sembunyikan nama
                                         </label>
                                     </div>
                                     <div v-if="form.is_anonymous" class="mt-2 rounded-xl bg-emerald-50/90 border border-emerald-200/80 p-2.5 text-[11px] text-emerald-900 leading-relaxed shadow-2xs">
@@ -1156,7 +1157,7 @@ const isWithdrawn = computed(() => {
                                             <IconShieldCheck class="h-3.5 w-3.5 text-emerald-700" />
                                             <span>Enkripsi Paillier 1024-bit Aktif</span>
                                         </div>
-                                        Nama Anda akan dienkripsi secara asimetris dengan public key Paillier. Pada ledger blockchain publik, nama Anda disamarkan sebagai <strong>Hamba Allah (Terenkripsi)</strong> dengan SHA-256 commitment hash.
+                                        Nama donatur asli yang Anda masukkan dienkripsi secara asimetris menggunakan Paillier cryptosystem. Di daftar publik, identitas Anda ditampilkan sebagai <strong>Hamba Allah</strong> dengan bukti komitmen SHA-256 terenkripsi.
                                     </div>
                                 </div>
 

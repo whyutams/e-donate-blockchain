@@ -162,4 +162,48 @@ class DonationEncryptionTest extends TestCase
         ]);
         $guestSnapResponse->assertStatus(401);
     }
+
+    public function test_midtrans_donation_encrypts_donor_name_when_is_anonymous_is_true(): void
+    {
+        $donor = User::factory()->create(['name' => 'Ahmad Dahlan']);
+        $organizer = User::factory()->create();
+
+        $campaign = Campaign::create([
+            'organizer_id' => $organizer->id,
+            'title' => 'Bantuan Bencana Gempa',
+            'description' => 'Bantuan kemanusiaan darurat.',
+            'category' => 'Bencana',
+            'slug' => 'bantuan-bencana-gempa',
+            'target_amount' => 10000000,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDays(30),
+            'payout_bank_name' => 'BCA',
+            'payout_account_number' => '1234567890',
+            'payout_account_name' => 'Yayasan Peduli',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($donor)->postJson("/campaigns/{$campaign->id}/donations/snap", [
+            'amount' => 100000,
+            'donor_name' => 'Ahmad Dahlan Rahasia',
+            'is_anonymous' => true,
+            'donor_email' => 'ahmad@example.com',
+            'donor_phone' => '081234567890',
+            'donor_note' => 'Semoga lekas pulih.',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $donation = Donation::where('campaign_id', $campaign->id)->latest()->first();
+
+        $this->assertNotNull($donation);
+        $this->assertTrue($donation->is_anonymous);
+        $this->assertSame('Hamba Allah', $donation->donor_name);
+        $this->assertNotNull($donation->encrypted_donor_name);
+
+        $paillier = app(PaillierService::class);
+        $decryptedName = $paillier->decryptString($donation->encrypted_donor_name);
+        $this->assertSame('Ahmad Dahlan Rahasia', $decryptedName);
+    }
 }
