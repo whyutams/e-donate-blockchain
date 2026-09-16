@@ -12,6 +12,7 @@ import {
     IconCash,
     IconBuildingBank,
     IconX,
+    IconCopy,
 } from '@tabler/icons-vue';
 
 interface Campaign {
@@ -36,6 +37,22 @@ interface Campaign {
 
 const props = defineProps<{ campaigns: Campaign[]; canCreate: boolean }>();
 const page = usePage();
+
+const copiedCampaignId = ref<number | null>(null);
+const copyCampaignLink = (campaignId: number, e?: Event) => {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    const url = `${window.location.origin}/campaigns/${campaignId}`;
+    navigator.clipboard.writeText(url);
+    copiedCampaignId.value = campaignId;
+    setTimeout(() => {
+        if (copiedCampaignId.value === campaignId) {
+            copiedCampaignId.value = null;
+        }
+    }, 2000);
+};
 
 const formatRupiah = (value: number): string => new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -198,6 +215,17 @@ const submitWithdrawal = () => {
                     <!-- Card Actions -->
                     <div class="p-5 pt-0">
                         <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
+                            <button
+                                type="button"
+                                class="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                                title="Salin link kampanye"
+                                @click="copyCampaignLink(campaign.id, $event)"
+                            >
+                                <IconCheck v-if="copiedCampaignId === campaign.id" class="h-3.5 w-3.5 text-emerald-600" />
+                                <IconCopy v-else class="h-3.5 w-3.5 text-slate-500" />
+                                <span>{{ copiedCampaignId === campaign.id ? 'Tersalin' : 'Salin' }}</span>
+                            </button>
+
                             <Link
                                 :href="`/campaigns/${campaign.id}`"
                                 class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"

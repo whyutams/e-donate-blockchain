@@ -62,7 +62,7 @@ class CampaignController extends Controller
             && $isWithinSchedule
             && $remainingAmount > 0;
 
-        return Inertia::render('Campaigns/Show', [
+        $data = [
             'campaign' => [
                 ...$this->present($campaign),
                 'wallet_address' => $campaign->wallet_address,
@@ -77,7 +77,10 @@ class CampaignController extends Controller
                 'donation_message' => $remainingAmount === 0 ? 'Target donasi sudah tercapai.' : ($donationOpen ? 'Donasi sedang dibuka.' : ($isWithinSchedule ? 'Donasi belum tersedia.' : $campaign->donationAvailabilityMessage())),
                 'donations' => $campaign->donations->map(fn ($donation) => [
                     'id' => $donation->id,
-                    'donor_name' => $donation->donor_name ?? 'Dermawan Baik',
+                    'is_anonymous' => (bool) $donation->is_anonymous,
+                    'donor_name' => $donation->is_anonymous ? 'Hamba Allah' : ($donation->donor_name ?? 'Dermawan Baik'),
+                    'encrypted_donor_name' => $donation->encrypted_donor_name,
+                    'donor_name_commitment' => $donation->encrypted_donor_name ? $paillier->commitment($donation->encrypted_donor_name) : null,
                     'payment_method' => $donation->payment_method,
                     'reference_code' => $donation->reference_code,
                     'payment_proof_url' => $donation->payment_proof_path ? asset('storage/' . $donation->payment_proof_path) : null,
@@ -88,7 +91,13 @@ class CampaignController extends Controller
                     'created_at' => $donation->created_at?->toIso8601String(),
                 ])->values(),
             ],
-        ]);
+        ];
+
+        if (! auth()->check()) {
+            return Inertia::render('Campaigns/PublicShow', $data);
+        }
+
+        return Inertia::render('Campaigns/Show', $data);
     }
 
     private function collectedAmount(Campaign $campaign, PaillierService $paillier): int

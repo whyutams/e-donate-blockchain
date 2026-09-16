@@ -38,6 +38,7 @@ class MidtransController extends Controller
         $validated = $request->validate([
             'amount' => ['required', 'integer', 'min:1', 'max:1000000000'],
             'donor_name' => ['nullable', 'string', 'max:100'],
+            'is_anonymous' => ['nullable', 'boolean'],
             'donor_email' => ['nullable', 'email', 'max:100'],
             'donor_phone' => ['nullable', 'string', 'max:30'],
             'donor_note' => ['nullable', 'string', 'max:500'],
@@ -58,6 +59,17 @@ class MidtransController extends Controller
         $encryptedAmount = $encryptor->encrypt($amount);
         $commitment = app(PaillierService::class)->commitment($encryptedAmount);
 
+        // Enkripsi nama donatur jika memilih sembunyikan nama (Paillier Cryptosystem)
+        $isAnonymous = $request->boolean('is_anonymous');
+        $rawDonorName = ! empty($validated['donor_name']) ? $validated['donor_name'] : ($request->user()?->name ?? 'Donatur Anonim');
+        $encryptedDonorName = null;
+        $displayDonorName = $rawDonorName;
+
+        if ($isAnonymous) {
+            $encryptedDonorName = app(PaillierService::class)->encryptString($rawDonorName);
+            $displayDonorName = 'Hamba Allah';
+        }
+
         // Transaction Hash Kriptografis Blockchain
         $txHash = '0x' . hash('sha256', "donation:midtrans:{$campaign->id}:" . Str::random(16) . ":{$encryptedAmount}:" . microtime(true));
 
@@ -68,14 +80,15 @@ class MidtransController extends Controller
         // Kode Referensi Unik Order ID Midtrans (Maksimal 50 karakter)
         $referenceCode = 'SG-' . date('ymd') . '-' . strtoupper(Str::random(6));
 
-        $donorName = $validated['donor_name'] ?: ($request->user()?->name ?? 'Donatur Anonim');
-        $donorEmail = $validated['donor_email'] ?: ($request->user()?->email ?? 'donor@example.com');
-        $donorPhone = $validated['donor_phone'] ?: '081234567890';
+        $donorEmail = ! empty($validated['donor_email']) ? $validated['donor_email'] : ($request->user()?->email ?? 'donor@example.com');
+        $donorPhone = ! empty($validated['donor_phone']) ? $validated['donor_phone'] : '081234567890';
 
         $donation = Donation::create([
             'campaign_id' => $campaign->id,
             'donor_id' => $request->user()?->id,
-            'donor_name' => $donorName,
+            'is_anonymous' => $isAnonymous,
+            'donor_name' => $displayDonorName,
+            'encrypted_donor_name' => $encryptedDonorName,
             'donor_email' => $donorEmail,
             'donor_phone' => $donorPhone,
             'payment_method' => 'midtrans',
@@ -90,7 +103,7 @@ class MidtransController extends Controller
 
         try {
             $customer = [
-                'name' => $donorName,
+                'name' => $displayDonorName,
                 'email' => $donorEmail,
                 'phone' => $donorPhone,
             ];

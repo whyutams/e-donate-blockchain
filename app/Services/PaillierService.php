@@ -38,6 +38,54 @@ class PaillierService
         return $ciphertext->toString();
     }
 
+    public function encryptString(string $text): string
+    {
+        $keys = $this->keys();
+        $n = $this->integer($keys['n']);
+        $g = $this->integer($keys['g']);
+        $nSquared = $n->multiply($n);
+
+        $hex = bin2hex($text);
+        if ($hex === '') {
+            $hex = '00';
+        }
+
+        $message = new BigInteger($hex, 16);
+        if ($message->compare($n) >= 0) {
+            throw new InvalidArgumentException('Plaintext string exceeds Paillier modulus size.');
+        }
+
+        $r = $this->randomCoprime($n);
+        $ciphertext = $g->powMod($message, $nSquared)
+            ->multiply($r->powMod($n, $nSquared))
+            ->divide($nSquared)[1];
+
+        return $ciphertext->toString();
+    }
+
+    public function decryptString(string $ciphertext): string
+    {
+        $keys = $this->keys();
+        $n = $this->integer($keys['n']);
+        $nSquared = $n->multiply($n);
+        $lambda = $this->integer($keys['lambda']);
+        $mu = $this->integer($keys['mu']);
+        $lValue = $this->lFunction($this->integer($ciphertext)->powMod($lambda, $nSquared), $n);
+        $message = $lValue->multiply($mu)->divide($n)[1];
+
+        $hex = $message->toHex();
+        if ($hex === '00' || $hex === '0') {
+            return '';
+        }
+        if (strlen($hex) % 2 !== 0) {
+            $hex = '0' . $hex;
+        }
+
+        $decoded = hex2bin($hex);
+
+        return $decoded !== false ? $decoded : '';
+    }
+
     public function commitment(string $ciphertext): string
     {
         return hash('sha256', $ciphertext);

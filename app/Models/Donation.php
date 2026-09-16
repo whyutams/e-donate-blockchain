@@ -10,7 +10,9 @@ class Donation extends Model
     protected $fillable = [
         'campaign_id',
         'donor_id',
+        'is_anonymous',
         'donor_name',
+        'encrypted_donor_name',
         'donor_email',
         'donor_phone',
         'payment_method',
@@ -34,6 +36,7 @@ class Donation extends Model
     protected function casts(): array
     {
         return [
+            'is_anonymous' => 'boolean',
             'block_number' => 'integer',
             'confirmed_at' => 'datetime',
             'midtrans_response' => 'array',

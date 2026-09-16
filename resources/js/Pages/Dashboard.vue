@@ -487,10 +487,20 @@ const submitDonation = () => {
                                     </div>
                                 </div>
 
-                                <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                                    <span class="text-[11px] text-slate-400">Pencairan: Target/Expired</span>
+                                <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                                    <button
+                                        type="button"
+                                        class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                                        title="Salin link kampanye"
+                                        @click="copyToClipboard(`${$page.props.app_url || window.location.origin}/campaigns/${camp.id}`, `camp-${camp.id}`)"
+                                    >
+                                        <IconCheck v-if="copiedItem === `camp-${camp.id}`" class="h-3.5 w-3.5 text-emerald-600" />
+                                        <IconCopy v-else class="h-3.5 w-3.5 text-slate-500" />
+                                        <span>{{ copiedItem === `camp-${camp.id}` ? 'Tersalin' : 'Salin' }}</span>
+                                    </button>
+
                                     <Link
-                                        :href="`/campaigns`"
+                                        :href="`/campaigns/${camp.id}`"
                                         class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
                                     >
                                         <span>Donasi Sekarang</span>

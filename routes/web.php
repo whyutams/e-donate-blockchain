@@ -5,9 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware(['throttle:global'])->group(function () {
-    Route::get('/', function () {
-        return redirect()->route('login');
-    });
+    Route::get('/', \App\Http\Controllers\LandingController::class)->name('home');
 });
 
 Route::middleware(['throttle:donations'])->prefix('api')->group(function () {
